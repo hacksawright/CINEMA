@@ -1,0 +1,99 @@
+---
+alwaysApply: true
+---
+## Frontend UI Rules (Vite + React + Tailwind + shadcn/ui)
+
+These rules define how to implement UI in the `frontend/` app to ensure visual and code consistency.
+
+### Design tokens and Tailwind
+- Use only CSS variables defined in `src/index.css` for colors and radii. All colors are HSL.
+- Prefer Tailwind classes that map to tokens from `tailwind.config.ts` (e.g., `bg-background`, `text-foreground`, `border-border`, `ring`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `card`, `popover`, `sidebar`).
+- Keep the container width and padding consistent using `container` with configured breakpoints.
+- Animations should use the configured keyframes: `accordion-down` and `accordion-up` via `animate-accordion-down` / `animate-accordion-up`.
+- Respect `darkMode: class`. Do not hardcode color values; rely on tokenized classes or `hsl(var(--token))` via Tailwind config.
+
+### Component library usage
+- Prefer prebuilt components from `@/components/ui/*` (shadcn/ui) when a matching primitive exists (button, input, card, dialog, dropdown, table, tabs, etc.).
+- New UI primitives should be added under `src/components/ui/` and follow shadcn conventions.
+- Do not reimplement behavior that exists in an existing `ui/*` component. Extend via composition instead.
+
+### Class name composition
+- Always merge class names using the `cn` utility from `@/lib/utils`.
+- When exposing a `className` prop, pass it to the outermost element and merge with defaults via `cn(defaults, className)`.
+
+### File structure and aliases
+- Use path aliases from `components.json`: `@/components`, `@/lib`, `@/hooks`, and `@/components/ui`.
+- Place page-level components in `src/pages/`, shared building blocks in `src/components/`, and primitives in `src/components/ui/`.
+
+### Accessibility and semantics
+- Use semantic HTML elements and appropriate ARIA attributes per component guidance (e.g., dialogs, menus, tabs, accordions from shadcn/radix patterns).
+- Interactive elements must be keyboard accessible (focus styles, roles, tab order).
+
+### New component checklist (must-follow)
+- Import primitives from `@/components/ui/*` where applicable.
+- Use Tailwind classes backed by tokens; avoid raw hex or rgb.
+- Merge `className` via `cn`.
+- Support `data-[state]`/`aria-*` states when extending shadcn components.
+- Keep spacing and radius consistent with `--radius` and container paddings.
+
+### Example patterns
+
+Component exposing className and using cn:
+
+```tsx
+import { cn } from "@/lib/utils";
+
+type Props = React.HTMLAttributes<HTMLDivElement>;
+
+export function Panel({ className, ...props }: Props) {
+  return (
+    <div
+      className={cn(
+        "bg-card text-card-foreground rounded-lg border border-border",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+```
+
+Using a shadcn button with tokens:
+
+```tsx
+import { Button } from "@/components/ui/button";
+
+export function SubmitAction() {
+  return (
+    <Button className="bg-primary text-primary-foreground hover:opacity-90">
+      Continue
+    </Button>
+  );
+}
+```
+
+Accordion animation classes:
+
+```tsx
+<div className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up" />
+```
+
+### Theming
+- Theme values come from `:root` tokens in `src/index.css`. If a new theme token is needed, add it there as HSL and wire it through `tailwind.config.ts` `extend.colors` before usage.
+
+### Do not
+- Do not hardcode colors, spacing, or radii outside tokens.
+- Do not bypass `cn` for class merging.
+- Do not create duplicate primitives outside `src/components/ui/`.
+
+### Scope
+These rules apply to all files under `frontend/src/**/*` and `frontend/index.html`.
+
+### Style type
+- **Cinematic dark theme**: Default background `bg-background` with high-contrast `text-foreground` over dark surfaces (`card`, `popover`).
+- **Palette**: Primary and accent use burgundy/red (`--primary`, `--accent`), highlights use cinema gold (`--secondary`). All colors are HSL tokens from `src/index.css` and mapped through `tailwind.config.ts`.
+- **Surfaces**: Use `bg-card text-card-foreground` for cards; `bg-popover text-popover-foreground` for overlays. Always include `border border-border` on elevated surfaces unless intentionally frameless.
+- **Radii**: Rounded per `--radius` (0.75rem). Use Tailwind radii tokens (`rounded-lg`, `rounded-md`, `rounded-sm`) which are derived from theme.
+- **Motion**: Subtle, fast transitions; prefer configured accordion animations (`animate-accordion-down` / `animate-accordion-up`). Avoid long or bouncy animations.
+- **Interaction states**: Focus rings and interactive emphasis should rely on tokens (`ring`, `ring-offset`, `ring-primary`) rather than hardcoded colors. Hover states should not reduce contrast below AA.
+- **Composition**: Favor shadcn primitives with token classes; avoid bespoke CSS. Merge classes via `cn` and expose `className` on outermost element.
