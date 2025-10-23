@@ -68,6 +68,17 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            
+            <!-- Flyway Maven Plugin -->
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <configuration>
+                    <url><![CDATA[jdbc:mysql://localhost:3307/cinema_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC]]></url>
+                    <user>root</user>
+                    <password>password</password>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

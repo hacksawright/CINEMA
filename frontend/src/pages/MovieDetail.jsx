@@ -95,7 +95,7 @@ export default function MovieDetail() {
             <h1 className="text-4xl font-bold mb-4">{movie.title}</h1>
             <div className="flex items-center gap-4 text-muted-foreground mb-6">
               <div className="flex items-center gap-1">
-                <span>{movie.duration} min</span>
+                <span>{movie.durationMinutes} min</span>
               </div>
             </div>
 

@@ -1,0 +1,14 @@
+com\cinema\health\HealthController.class
+com\cinema\exception\MovieAlreadyExistsException.class
+com\cinema\exception\GlobalExceptionHandler.class
+com\cinema\exception\InvalidMovieStatusException.class
+com\cinema\dto\MovieRequest.class
+com\cinema\controller\MovieController.class
+com\cinema\service\MovieServiceImpl.class
+com\cinema\dto\MovieResponse.class
+com\cinema\repository\MovieRepository.class
+com\cinema\service\MovieService.class
+com\cinema\exception\MovieNotFoundException.class
+com\cinema\model\Movie.class
+com\cinema\CinemaServerApplication.class
+com\cinema\service\MovieStatistics.class

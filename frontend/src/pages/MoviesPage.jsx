@@ -132,7 +132,7 @@ export default function MoviesPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Clock className="h-4 w-4" />
-                        <span>{movie.duration} phút</span>
+                        <span>{movie.durationMinutes} phút</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -453,7 +453,7 @@ export default function MoviesPage() {
                       id={movie.id}
                       title={movie.title}
                       description={movie.description || ""}
-                      duration={movie.duration}
+                      duration={movie.durationMinutes}
                       posterUrl={movie.poster_url}
                       status={movie.status}
                     />
@@ -479,7 +479,7 @@ export default function MoviesPage() {
                       id={movie.id}
                       title={movie.title}
                       description={movie.description || ""}
-                      duration={movie.duration}
+                      duration={movie.durationMinutes}
                       posterUrl={movie.poster_url}
                       status={movie.status}
                     />

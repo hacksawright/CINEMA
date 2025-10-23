@@ -125,7 +125,7 @@ const ShowtimeManagement = () => {
               <SelectContent>
                 {movies.map((movie) => (
                   <SelectItem key={movie.id} value={movie.id}>
-                    {movie.title} ({movie.duration} phút)
+                    {movie.title} ({movie.durationMinutes} phút)
                   </SelectItem>
                 ))}
               </SelectContent>
