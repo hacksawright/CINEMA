@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/Layout.jsx";
 import { MovieCard } from "@/components/MovieCard.jsx";
-import { supabase } from "@/integrations/supabase/client";
+import { getAllMoviesList, getShowingMovies, getUpcomingMovies } from "@/services/movieService";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,7 +26,8 @@ import {
 import heroImage from "@/assets/hero-cinema.jpg";
 
 export default function MoviesPage() {
-  const [movies, setMovies] = useState([]);
+  const [nowShowing, setNowShowing] = useState([]);
+  const [comingSoon, setComingSoon] = useState([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -36,22 +37,26 @@ export default function MoviesPage() {
 
   const fetchMovies = async () => {
     try {
-      const { data, error } = await supabase
-        .from("movies")
-        .select("*")
-        .order("release_date", { ascending: false });
-
-      if (error) throw error;
-      setMovies(data || []);
+      setLoading(true);
+      const [showingData, upcomingData] = await Promise.all([
+        getShowingMovies(),
+        getUpcomingMovies()
+      ]);
+      
+      setNowShowing(showingData || []);
+      setComingSoon(upcomingData || []);
     } catch (error) {
-      toast({ title: "Lỗi", description: "Không thể tải danh sách phim", variant: "destructive" });
+      console.error('Error fetching movies:', error);
+      toast({ 
+        title: "Lỗi", 
+        description: "Không thể tải danh sách phim. Vui lòng thử lại sau.", 
+        variant: "destructive" 
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const nowShowing = movies.filter(m => m.status === "now_showing");
-  const comingSoon = movies.filter(m => m.status === "coming_soon");
   const featuredMovies = nowShowing.slice(0, 3);
 
   return (
@@ -104,9 +109,9 @@ export default function MoviesPage() {
               {featuredMovies.map((movie, index) => (
                 <Card key={movie.id} className="overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-105 bg-card border-border group">
                   <div className="aspect-[2/3] overflow-hidden bg-muted relative">
-                    {movie.poster_url ? (
+                    {movie.posterUrl ? (
                       <img 
-                        src={movie.poster_url} 
+                        src={movie.posterUrl} 
                         alt={movie.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       />
@@ -120,7 +125,10 @@ export default function MoviesPage() {
                     </Badge>
                     <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+                      <Button 
+                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                        onClick={() => window.location.href = `/movie/${movie.id}`}
+                      >
                         <Play className="h-4 w-4 mr-2" />
                         Xem Chi Tiết
                       </Button>
@@ -454,7 +462,7 @@ export default function MoviesPage() {
                       title={movie.title}
                       description={movie.description || ""}
                       duration={movie.durationMinutes}
-                      posterUrl={movie.poster_url}
+                      posterUrl={movie.posterUrl}
                       status={movie.status}
                     />
                   ))}
@@ -480,7 +488,7 @@ export default function MoviesPage() {
                       title={movie.title}
                       description={movie.description || ""}
                       duration={movie.durationMinutes}
-                      posterUrl={movie.poster_url}
+                      posterUrl={movie.posterUrl}
                       status={movie.status}
                     />
                   ))}
