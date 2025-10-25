@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/rooms")
@@ -20,5 +21,10 @@ public class RoomController {
     @ResponseStatus(HttpStatus.CREATED)
     public Room create(@RequestBody @Valid RoomCreateDto dto) {
         return roomService.create(dto);
+    }
+
+    @GetMapping
+    public List<Room> getAll() {
+        return roomService.findAll();
     }
 }

@@ -6,6 +6,7 @@ import com.cinema.repository.MovieRepository;
 import com.cinema.service.MovieService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.util.List;
 
 @Service
 public class MovieServiceImpl implements MovieService {
@@ -23,5 +24,10 @@ public class MovieServiceImpl implements MovieService {
                 .releaseDate(dto.getReleaseDate())
                 .build();
         return movieRepository.save(m);
+    }
+
+    @Override
+    public List<Movie> findAll() {
+        return movieRepository.findAll();
     }
 }

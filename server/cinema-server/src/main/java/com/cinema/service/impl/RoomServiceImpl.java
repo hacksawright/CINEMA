@@ -6,6 +6,7 @@ import com.cinema.repository.RoomRepository;
 import com.cinema.service.RoomService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.util.List;
 
 @Service
 public class RoomServiceImpl implements RoomService {
@@ -20,5 +21,10 @@ public class RoomServiceImpl implements RoomService {
                 .capacity(dto.getCapacity())
                 .build();
         return roomRepository.save(r);
+    }
+
+    @Override
+    public List<Room> findAll() {
+        return roomRepository.findAll();
     }
 }
