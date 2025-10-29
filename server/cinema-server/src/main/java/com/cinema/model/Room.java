@@ -5,6 +5,8 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "rooms")
 @Getter
@@ -28,6 +30,7 @@ public class Room {
     private Integer seatsPerRow;
 
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Seat> seats;
 
     @Column(name = "created_at", updatable = false)
