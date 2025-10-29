@@ -6,30 +6,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
+const API_BASE_URL = 'http://localhost:8080/api/auth'; 
 
 export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
+
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate("/");
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/");
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    const token = localStorage.getItem('jwtToken');
+    if (token) {
+      navigate("/", { replace: true }); 
+    }
   }, [navigate]);
 
+  
   const handleSignIn = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -39,14 +33,32 @@ export default function Auth() {
     const password = formData.get("password");
 
     try {
-      // const { error } = await supabase.auth.signInWithPassword({ email, password });
-      // if (error) {
-      //   if (error.message.includes("Invalid login credentials")) {
-      //     toast({ title: "Lỗi", description: "Email hoặc mật khẩu không đúng", variant: "destructive" });
-      //   } else {
-      //     toast({ title: "Lỗi", description: error.message, variant: "destructive" });
-      //   }
-      // }
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+    
+        localStorage.setItem('jwtToken', data.token);
+        localStorage.setItem('userId', data.userId); 
+
+        toast({ title: "Thành công!", description: "Đăng nhập thành công!" });
+        
+        // CHUYỂN HƯỚNG VỀ TRANG CHỦ
+        navigate("/", { replace: true }); 
+
+      } else {
+        // ĐĂNG NHẬP THẤT BẠI (401 Unauthorized, v.v.)
+        const errorMessage = data.message || "Email hoặc mật khẩu không đúng.";
+        toast({ title: "Lỗi", description: errorMessage, variant: "destructive" });
+      }
+    } catch (error) {
+        // Lỗi kết nối mạng
+        toast({ title: "Lỗi", description: "Không thể kết nối đến máy chủ Java.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -59,25 +71,27 @@ export default function Auth() {
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email");
     const password = formData.get("password");
-    const fullName = formData.get("fullName");
+    const fullName = formData.get("fullName"); 
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: redirectUrl, data: { full_name: fullName } },
+      const response = await fetch(`${API_BASE_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            email, 
+            password, 
+            fullName 
+        }),
       });
-
-      if (error) {
-        if (error.message.includes("already registered")) {
-          toast({ title: "Lỗi", description: "Email này đã được đăng ký. Vui lòng đăng nhập thay vào đó.", variant: "destructive" });
-        } else {
-          toast({ title: "Lỗi", description: error.message, variant: "destructive" });
-        }
+      const errorText = await response.text(); 
+      if (response.ok) {
+        toast({ title: "Tài khoản đã được tạo!", description: "Bây giờ bạn có thể đăng nhập với thông tin đã đăng ký." });
       } else {
-        toast({ title: "Tài khoản đã được tạo!", description: "Bây giờ bạn có thể đăng nhập với thông tin đăng nhập của mình." });
+        // Lỗi 400 Bad Request từ Java Backend
+        toast({ title: "Lỗi", description: errorText, variant: "destructive" });
       }
+    } catch (error) {
+        toast({ title: "Lỗi", description: "Không thể kết nối đến máy chủ Java.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +121,8 @@ export default function Auth() {
               </TabsList>
 
               <TabsContent value="signin">
-                <form onSubmit={handleSignIn} className="space-y-4">
+                {/* Đã liên kết onSubmit với handleSignIn */}
+                <form onSubmit={handleSignIn} className="space-y-4"> 
                   <div className="space-y-2">
                     <Label htmlFor="signin-email">Email</Label>
                     <Input id="signin-email" name="email" type="email" placeholder="email@example.com" required />
@@ -123,10 +138,11 @@ export default function Auth() {
               </TabsContent>
 
               <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4">
+                {/* Đã liên kết onSubmit với handleSignUp */}
+                <form onSubmit={handleSignUp} className="space-y-4"> 
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Họ và Tên</Label>
-                    <Input id="signup-name" name="fullName" type="text" placeholder="Nguyễn Văn A" />
+                    <Input id="signup-name" name="fullName" type="text" placeholder="Nguyễn Văn A" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
@@ -148,5 +164,3 @@ export default function Auth() {
     </div>
   );
 }
-
-

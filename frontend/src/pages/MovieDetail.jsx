@@ -3,9 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Layout } from "@/components/Layout.jsx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
+import { getMovieById } from "@/services/movieService";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar } from "lucide-react";
+import { Calendar, Clock, Star, Users, Award } from "lucide-react";
 import { format } from "date-fns";
 
 export default function MovieDetail() {
@@ -19,32 +19,26 @@ export default function MovieDetail() {
   useEffect(() => {
     if (id) {
       fetchMovieDetails();
+      // Scroll to top when component mounts
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [id]);
 
   const fetchMovieDetails = async () => {
     try {
-      const { data: movieData, error: movieError } = await supabase
-        .from("movies")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (movieError) throw movieError;
+      const movieData = await getMovieById(id);
       setMovie(movieData);
 
-      const { data: showtimesData, error: showtimesError } = await supabase
-        .from("showtimes")
-        .select("*")
-        .eq("movie_id", id)
-        .gte("show_date", new Date().toISOString().split("T")[0])
-        .order("show_date", { ascending: true })
-        .order("show_time", { ascending: true });
-
-      if (showtimesError) throw showtimesError;
-      setShowtimes(showtimesData || []);
+      // TODO: Implement showtimes API when available
+      // For now, we'll show a placeholder
+      setShowtimes([]);
     } catch (error) {
-      toast({ title: "Error", description: "Failed to load movie details", variant: "destructive" });
+      console.error('Error fetching movie details:', error);
+      toast({ 
+        title: "Lỗi", 
+        description: "Không thể tải thông tin phim. Vui lòng thử lại sau.", 
+        variant: "destructive" 
+      });
     } finally {
       setLoading(false);
     }
@@ -82,8 +76,8 @@ export default function MovieDetail() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid md:grid-cols-[300px_1fr] gap-8">
           <div className="aspect-[2/3] overflow-hidden rounded-lg bg-muted">
-            {movie.poster_url ? (
-              <img src={movie.poster_url} alt={movie.title} className="w-full h-full object-cover" />
+            {movie.posterUrl ? (
+              <img src={movie.posterUrl} alt={movie.title} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20">
                 <span className="text-8xl font-bold text-muted-foreground">{movie.title[0]}</span>
@@ -92,17 +86,43 @@ export default function MovieDetail() {
           </div>
 
           <div>
-            <h1 className="text-4xl font-bold mb-4">{movie.title}</h1>
-            <div className="flex items-center gap-4 text-muted-foreground mb-6">
+            <h1 className="text-4xl font-bold mb-4 text-foreground">{movie.title}</h1>
+            
+            {/* Movie Info */}
+            <div className="flex flex-wrap items-center gap-6 text-muted-foreground mb-6">
               <div className="flex items-center gap-1">
-                <span>{movie.duration} min</span>
+                <Clock className="h-4 w-4" />
+                <span>{movie.durationMinutes} phút</span>
               </div>
+              <div className="flex items-center gap-1">
+                <Award className="h-4 w-4" />
+                <span>{movie.rating}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Calendar className="h-4 w-4" />
+                <span>{format(new Date(movie.releaseDate), "dd/MM/yyyy")}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Users className="h-4 w-4" />
+                <span>{movie.genre}</span>
+              </div>
+            </div>
+
+            {/* Rating */}
+            <div className="flex items-center gap-2 mb-6">
+              <div className="flex items-center gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <span className="text-lg font-semibold text-foreground">4.8/5</span>
+              <span className="text-muted-foreground">(1,234 đánh giá)</span>
             </div>
 
             {movie.description && (
               <div className="mb-8">
-                <h2 className="text-xl font-semibold mb-2">Synopsis</h2>
-                <p className="text-muted-foreground">{movie.description}</p>
+                <h2 className="text-xl font-semibold mb-3 text-foreground">Tóm tắt</h2>
+                <p className="text-muted-foreground leading-relaxed">{movie.description}</p>
               </div>
             )}
 
@@ -121,35 +141,24 @@ export default function MovieDetail() {
             )}
 
             <div>
-              <h2 className="text-2xl font-semibold mb-4">Showtimes</h2>
-              {Object.keys(groupedShowtimes).length > 0 ? (
-                <div className="space-y-6">
-                  {Object.entries(groupedShowtimes).map(([date, times]) => (
-                    <Card key={date} className="border-border">
-                      <CardContent className="p-6">
-                        <div className="flex items-center gap-2 mb-4">
-                          <Calendar className="h-5 w-5 text-primary" />
-                          <h3 className="font-semibold">{format(new Date(date), "EEEE, MMMM d, yyyy")}</h3>
-                        </div>
-                        <div className="flex flex-wrap gap-3">
-                          {times.map(showtime => (
-                            <Button
-                              key={showtime.id}
-                              variant="outline"
-                              onClick={() => navigate(`/booking/${showtime.id}`)}
-                              className="hover:bg-primary hover:text-primary-foreground"
-                            >
-                              {showtime.show_time.substring(0, 5)} - ${showtime.price}
-                            </Button>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground">No showtimes available</p>
-              )}
+              <h2 className="text-2xl font-semibold mb-4 text-foreground">Lịch Chiếu</h2>
+              <Card className="border-border">
+                <CardContent className="p-6">
+                  <div className="text-center py-8">
+                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2 text-foreground">Lịch chiếu sắp có</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Chúng tôi đang cập nhật lịch chiếu cho phim này. Vui lòng quay lại sau.
+                    </p>
+                    <Button 
+                      onClick={() => navigate('/movies')}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                    >
+                      Xem Phim Khác
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
