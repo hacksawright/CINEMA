@@ -49,18 +49,18 @@ CREATE TABLE movies (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- CREATE TABLE showtimes (
---     id BIGINT AUTO_INCREMENT PRIMARY KEY,
---     movie_id BIGINT NOT NULL,
---     room_id BIGINT NOT NULL,
---     starts_at DATETIME NOT NULL,
---     ends_at DATETIME NOT NULL,
---     base_price DECIMAL(10,2) NOT NULL,
---     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
---     CONSTRAINT fk_showtime_movie FOREIGN KEY (movie_id) REFERENCES movies(id),
---     CONSTRAINT fk_showtime_room FOREIGN KEY (room_id) REFERENCES rooms(id)
--- );
+CREATE TABLE showtimes (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    movie_id BIGINT NOT NULL,
+    room_id BIGINT NOT NULL,
+    starts_at DATETIME NOT NULL,
+    ends_at DATETIME NOT NULL,
+    base_price DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_showtime_movie FOREIGN KEY (movie_id) REFERENCES movies(id),
+    CONSTRAINT fk_showtime_room FOREIGN KEY (room_id) REFERENCES rooms(id)
+);
 
 CREATE TABLE seats (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,

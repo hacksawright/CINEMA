@@ -8,16 +8,23 @@ export const Layout = ({ children }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({ title: "Lỗi", description: "Không thể đăng xuất", variant: "destructive" });
-    } else {
-      navigate("/auth");
-      toast({ title: "Đăng xuất thành công" });
-    }
-  };
+  const handleLogout = () => {
+        try {
+            localStorage.removeItem('jwtToken');
+            localStorage.removeItem('userId'); 
 
+            // Thông báo thành công
+            toast({ title: "Thành công!", description: "Đã đăng xuất thành công!" });
+            
+            // CHUYỂN HƯỚNG về trang Đăng nhập
+            navigate('/auth', { replace: true }); 
+
+        } catch (error) {
+            console.error("Lỗi đăng xuất:", error);
+            // Xử lý lỗi nếu việc xóa thất bại
+            toast({ title: "Lỗi", description: "Không thể đăng xuất. Vui lòng thử lại.", variant: "destructive" });
+        }
+    };
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -128,5 +135,3 @@ export const Layout = ({ children }) => {
     </div>
   );
 };
-
-

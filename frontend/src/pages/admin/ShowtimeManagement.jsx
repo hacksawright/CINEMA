@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search, Edit, Trash2, Calendar, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
@@ -21,60 +21,71 @@ const ShowtimeManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedShowtime, setSelectedShowtime] = useState(null);
 
-  // Mock data - replace with actual API calls
-  const movies = [
-    { id: 1, title: "Avatar: The Way of Water", duration: 192 },
-    { id: 2, title: "Black Panther: Wakanda Forever", duration: 161 },
-    { id: 3, title: "Top Gun: Maverick", duration: 130 }
-  ];
+  // State for dynamic data loaded from API
+  const [movies, setMovies] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [showtimes, setShowtimes] = useState([]);
 
-  const rooms = [
-    { id: "room1", name: "Phòng chiếu 1", capacity: 120 },
-    { id: "room2", name: "Phòng chiếu 2", capacity: 100 },
-    { id: "room3", name: "Phòng chiếu 3", capacity: 80 }
-  ];
-
-  const showtimes = [
-    {
-      id: 1,
-      movieId: 1,
-      movieTitle: "Avatar: The Way of Water",
-      roomId: "room1",
-      roomName: "Phòng chiếu 1",
-      date: "2024-01-20",
-      time: "19:30",
-      price: 120000,
-      status: "active",
-      ticketsSold: 85,
-      totalTickets: 120
-    },
-    {
-      id: 2,
-      movieId: 2,
-      movieTitle: "Black Panther: Wakanda Forever",
-      roomId: "room2",
-      roomName: "Phòng chiếu 2",
-      date: "2024-01-20",
-      time: "20:00",
-      price: 120000,
-      status: "active",
-      ticketsSold: 45,
-      totalTickets: 100
-    },
-    {
-      id: 3,
-      movieId: 3,
-      movieTitle: "Top Gun: Maverick",
-      roomId: "room3",
-      roomName: "Phòng chiếu 3",
-      date: "2024-01-21",
-      time: "16:00",
-      price: 120000,
-      status: "cancelled",
-      ticketsSold: 0,
-      totalTickets: 80
+  const fetchShowtimes = async () => {
+    try {
+      const res = await fetch("http://localhost:8080/api/showtimes");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      // API returns pageable response with `content` array
+      const mapped = (data.content || []).map((s) => {
+        let starts = s.startsAt ? parseISO(s.startsAt) : new Date();
+        const movie = movies.find(m => String(m.id) === String(s.movieId));
+        const room = rooms.find(r => String(r.id) === String(s.roomId));
+        return {
+          id: s.id,
+          movieId: s.movieId?.toString() ?? String(s.movieId),
+          // prefer local movies list title, then API field, then fallback
+          movieTitle: movie?.title ?? s.movieTitle ?? `Phim #${s.movieId}`,
+          roomId: s.roomId?.toString() ?? String(s.roomId),
+          roomName: room?.name ?? s.roomName ?? `Phòng ${s.roomId}`,
+          date: format(starts, "yyyy-MM-dd"),
+          time: format(starts, "HH:mm"),
+          price: s.basePrice ?? s.price ?? 0,
+          // status is not provided by this API shape; leave undefined
+          ticketsSold: s.ticketsSold ?? 0,
+          totalTickets: s.totalTickets ?? 0
+        };
+      });
+      setShowtimes(mapped);
+    } catch (err) {
+      console.error("Failed to fetch showtimes:", err);
     }
-  ];
+  };
+
+  // On mount: fetch movies/rooms first so we can display titles, then fetch showtimes
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const [moviesRes, roomsRes] = await Promise.all([
+          fetch('http://localhost:8080/api/movies'),
+          fetch('http://localhost:8080/api/rooms')
+        ]);
+        if (moviesRes.ok) {
+          const moviesData = await moviesRes.json();
+          const moviesList = moviesData.content || moviesData || [];
+          setMovies(moviesList.map(m => ({ ...m, id: m.id?.toString ? m.id.toString() : String(m.id) })));
+        }
+        if (roomsRes.ok) {
+          const roomsData = await roomsRes.json();
+          const roomsList = roomsData.content || roomsData || [];
+          setRooms(roomsList.map(r => ({ ...r, id: r.id?.toString ? r.id.toString() : String(r.id) })));
+        }
+      } catch (err) {
+        console.warn('Failed to prefetch movies/rooms on mount:', err);
+      } finally {
+        // fetch showtimes after attempting to load names
+        await fetchShowtimes();
+      }
+    };
+
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filteredShowtimes = showtimes.filter(showtime => {
     const matchesSearch = showtime.movieTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -92,9 +103,37 @@ const ShowtimeManagement = () => {
       case "completed":
         return <Badge variant="outline">Hoàn thành</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline">—</Badge>;
     }
   };
+
+  // When opening the add dialog, fetch movies and rooms concurrently
+  useEffect(() => {
+    if (!isAddDialogOpen) return;
+
+    const fetchLists = async () => {
+      try {
+        const [moviesRes, roomsRes] = await Promise.all([
+          fetch('http://localhost:8080/api/movies'),
+          fetch('http://localhost:8080/api/rooms')
+        ]);
+        if (!moviesRes.ok || !roomsRes.ok) {
+          console.warn('Failed to fetch movies or rooms', moviesRes.status, roomsRes.status);
+          return;
+        }
+        const moviesData = await moviesRes.json();
+        const roomsData = await roomsRes.json();
+        const moviesList = moviesData.content || moviesData || [];
+        const roomsList = roomsData.content || roomsData || [];
+        setMovies(moviesList.map(m => ({ ...m, id: m.id?.toString ? m.id.toString() : String(m.id) })));
+        setRooms(roomsList.map(r => ({ ...r, id: r.id?.toString ? r.id.toString() : String(r.id) })));
+      } catch (err) {
+        console.error('Failed to fetch movies/rooms:', err);
+      }
+    };
+
+    fetchLists();
+  }, [isAddDialogOpen]);
 
   const ShowtimeForm = ({ showtime = null, onClose }) => {
     const [formData, setFormData] = useState({
@@ -103,14 +142,73 @@ const ShowtimeManagement = () => {
       date: showtime?.date || format(new Date(), 'yyyy-MM-dd'),
       time: showtime?.time || "",
       price: showtime?.price || 120000,
-      status: showtime?.status || "active"
+      // status removed per request
     });
 
     const handleSubmit = (e) => {
       e.preventDefault();
-      // Handle form submission
-      console.log("Showtime data:", formData);
-      onClose();
+      (async () => {
+        try {
+          // Build payload matching ShowtimeDto expected by backend
+          const movieIdNum = formData.movieId ? Number(formData.movieId) : null;
+          const roomIdNum = formData.roomId ? Number(formData.roomId) : null;
+          const startsAt = `${formData.date}T${formData.time}:00`;
+
+          // Try to compute endsAt using movie duration (minutes) when available
+          let endsAt = null;
+          const movie = movies.find(m => String(m.id) === String(formData.movieId));
+          const durationMinutes = movie?.durationMinutes ?? movie?.duration ?? null;
+          if (durationMinutes) {
+            // create a Date from local date/time
+            const [h, min] = formData.time.split(":").map(Number);
+            const startDate = new Date(formData.date);
+            startDate.setHours(h, min, 0, 0);
+            const endDate = new Date(startDate.getTime() + Number(durationMinutes) * 60000);
+            const pad = (n) => String(n).padStart(2, '0');
+            endsAt = `${endDate.getFullYear()}-${pad(endDate.getMonth()+1)}-${pad(endDate.getDate())}T${pad(endDate.getHours())}:${pad(endDate.getMinutes())}:00`;
+          }
+
+          const payload = {
+            movieId: movieIdNum,
+            roomId: roomIdNum,
+            startsAt,
+            endsAt,
+            basePrice: Number(formData.price)
+          };
+
+          let res;
+          if (showtime && showtime.id) {
+            // update existing
+            res = await fetch(`http://localhost:8080/api/showtimes/${showtime.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            if (!res.ok) {
+              const errText = await res.text();
+              throw new Error(`PUT ${res.status} ${errText}`);
+            }
+          } else {
+            // create new
+            res = await fetch('http://localhost:8080/api/showtimes', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            if (!res.ok) {
+              const errText = await res.text();
+              throw new Error(`POST ${res.status} ${errText}`);
+            }
+          }
+
+          // success: refresh showtimes and close
+          await fetchShowtimes();
+          onClose();
+        } catch (err) {
+          console.error('Failed to save showtime:', err);
+          // Optionally show UI feedback here
+        }
+      })();
     };
 
     return (
@@ -124,8 +222,8 @@ const ShowtimeManagement = () => {
               </SelectTrigger>
               <SelectContent>
                 {movies.map((movie) => (
-                  <SelectItem key={movie.id} value={movie.id}>
-                    {movie.title} ({movie.durationMinutes} phút)
+                  <SelectItem key={movie.id} value={String(movie.id)}>
+                    {movie.title ?? movie.name ?? `Phim #${movie.id}`}{movie.duration ? ` (${movie.duration} phút)` : ''}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -139,8 +237,8 @@ const ShowtimeManagement = () => {
               </SelectTrigger>
               <SelectContent>
                 {rooms.map((room) => (
-                  <SelectItem key={room.id} value={room.id}>
-                    {room.name} ({room.capacity} ghế)
+                  <SelectItem key={room.id} value={String(room.id)}>
+                    {room.name ?? room.roomName ?? `Phòng ${room.id}`}{room.capacity ? ` (${room.capacity} ghế)` : ''}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -181,19 +279,6 @@ const ShowtimeManagement = () => {
               onChange={(e) => setFormData({ ...formData, price: e.target.value })}
               required
             />
-          </div>
-          <div>
-            <Label htmlFor="status">Trạng thái</Label>
-            <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Hoạt động</SelectItem>
-                <SelectItem value="cancelled">Đã hủy</SelectItem>
-                <SelectItem value="completed">Hoàn thành</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
 
@@ -385,7 +470,26 @@ const ShowtimeManagement = () => {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-destructive">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive"
+                        onClick={async () => {
+                          if (!confirm('Bạn có chắc muốn xóa suất chiếu này?')) return;
+                          try {
+                            const res = await fetch(`http://localhost:8080/api/showtimes/${showtime.id}`, {
+                              method: 'DELETE'
+                            });
+                            if (!res.ok) {
+                              const txt = await res.text();
+                              throw new Error(`${res.status} ${txt}`);
+                            }
+                            await fetchShowtimes();
+                          } catch (err) {
+                            console.error('Failed to delete showtime:', err);
+                          }
+                        }}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>

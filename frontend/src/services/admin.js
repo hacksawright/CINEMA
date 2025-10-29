@@ -1,32 +1,68 @@
+import { api } from '@/lib/api';
 import { db, delay, id } from "./mockDb";
 
-// Movies
-export async function listMovies() { await delay(); return [...db.movies]; }
-export async function createMovie(payload) { await delay(); const m = { id: id("m"), ...payload }; db.movies.push(m); return m; }
-export async function updateMovie(id_, payload) { await delay(); const m = db.movies.find(m=>m.id===id_); if (!m) return null; Object.assign(m, payload); return m; }
-export async function deleteMovie(id_) { await delay(); const i = db.movies.findIndex(m=>m.id===id_); if (i>-1) db.movies.splice(i,1); return true; }
+export async function getAllRoomsAdmin() {
+  return api.getAllRooms();
+}
 
-// Showtimes
-export async function listShowtimes() { await delay(); return [...db.showtimes]; }
-export async function createShowtime(payload) { await delay(); const s = { id: id("s"), created_at: new Date().toISOString(), ...payload }; db.showtimes.push(s); return s; }
-export async function updateShowtime(id_, payload) { await delay(); const s = db.showtimes.find(s=>s.id===id_); if (!s) return null; Object.assign(s, payload); return s; }
-export async function deleteShowtime(id_) { await delay(); const i = db.showtimes.findIndex(s=>s.id===id_); if (i>-1) db.showtimes.splice(i,1); return true; }
+export async function createRoomAdmin(roomData) {
+  const payload = {
+      name: roomData.name,
+      totalRows: parseInt(roomData.totalRows, 10),
+      seatsPerRow: parseInt(roomData.seatsPerRow, 10)
+  };
+  return api.createRoom(payload);
+}
 
-// Tickets
-export async function listTickets() { await delay(); return [...db.tickets]; }
-export async function updateTicket(id_, payload) { await delay(); const t = db.tickets.find(t=>t.id===id_); if (!t) return null; Object.assign(t, payload); return t; }
+export async function updateRoomAdmin(roomId, roomData) {
+  const payload = {
+      name: roomData.name,
+      totalRows: parseInt(roomData.totalRows, 10),
+      seatsPerRow: parseInt(roomData.seatsPerRow, 10)
+  };
+  return api.updateRoom(roomId, payload);
+}
 
-// Orders
-export async function listOrders() { await delay(); return [...db.orders]; }
-export async function updateOrder(id_, payload) { await delay(); const o = db.orders.find(o=>o.id===id_); if (!o) return null; Object.assign(o, payload); return o; }
+export async function deleteRoomAdmin(roomId) {
+  return api.deleteRoom(roomId);
+}
 
-// Transactions
-export async function listTransactions() { await delay(); return [...db.transactions]; }
+export async function getRoomLayoutAdmin(roomId) {
+   return api.getRoomLayout(roomId);
+}
 
-// Staff
-export async function listStaff() { await delay(); return [...db.staff]; }
-export async function createStaff(payload) { await delay(); const s = { id: id("stf"), ...payload }; db.staff.push(s); return s; }
-export async function updateStaff(id_, payload) { await delay(); const s = db.staff.find(s=>s.id===id_); if (!s) return null; Object.assign(s, payload); return s; }
-export async function deleteStaff(id_) { await delay(); const i = db.staff.findIndex(s=>s.id===id_); if (i>-1) db.staff.splice(i,1); return true; }
+export async function updateRoomLayoutAdmin(roomId, layoutData) {
+   return api.updateRoomLayout(roomId, layoutData);
+}
 
+export async function listOrders() {
+  return api.getAllOrdersAdmin();
+}
+export async function updateOrder(id_, payload) {
+  return api.updateOrderStatusAdmin(id_, payload.status);
+}
+export async function getOrderDetailsAdmin(orderId) {
+    return api.getOrderDetailAdmin(orderId);
+}
 
+export async function listTransactions() {
+  return api.getAllTransactionsAdmin();
+}
+
+export async function listMovies() { return api.getAllMovies(); }
+export async function createMovie(payload) { return api.createMovie(payload); }
+export async function updateMovie(id_, payload) { return api.updateMovie(id_, payload); }
+export async function deleteMovie(id_) { return api.deleteMovie(id_); }
+
+export async function listShowtimes() { return api.getAllShowtimesAdmin(); }
+export async function createShowtime(payload) { return api.createShowtime(payload); }
+export async function updateShowtime(id_, payload) { return api.updateShowtime(id_, payload); }
+export async function deleteShowtime(id_) { return api.deleteShowtime(id_); }
+
+export async function listTickets() { return api.getAllTicketsAdmin(); }
+export async function updateTicket(id_, payload) { return api.updateTicketStatusAdmin(id_, payload.status); }
+
+export async function listStaff() { return api.getAllStaffAdmin(); }
+export async function createStaff(payload) { return api.createStaffAdmin(payload); }
+export async function updateStaff(id_, payload) { return api.updateStaffAdmin(id_, payload); }
+export async function deleteStaff(id_) { return api.deleteStaffAdmin(id_); }
