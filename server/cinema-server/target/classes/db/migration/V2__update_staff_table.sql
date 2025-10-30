@@ -17,8 +17,6 @@ ALTER TABLE cinema_db.staff
 DROP COLUMN created_at;
 ALTER TABLE cinema_db.staff
 DROP COLUMN updated_at;
-ALTER TABLE cinema_db.staff
-DROP COLUMN address;
 
 -- 3. Thêm các cột mới theo yêu cầu
 ALTER TABLE cinema_db.staff
