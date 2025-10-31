@@ -4,22 +4,20 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Film, 
-  Ticket, 
-  MapPin, 
-  Calendar, 
-  Users, 
-  ShoppingCart, 
+import {
+  Film,
+  Ticket,
+  MapPin,
+  Calendar,
+  Users,
+  ShoppingCart,
   CreditCard,
   BarChart3,
-  Settings,
   LogOut,
   Menu,
-  X
+  X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -31,74 +29,95 @@ const AdminLayout = () => {
       name: "Dashboard",
       href: "/admin",
       icon: BarChart3,
-      current: location.pathname === "/admin"
+      current: location.pathname === "/admin",
     },
     {
       name: "Quản lý phim",
       href: "/admin/movies",
       icon: Film,
-      current: location.pathname.startsWith("/admin/movies")
+      current: location.pathname.startsWith("/admin/movies"),
     },
     {
       name: "Quản lý vé",
       href: "/admin/tickets",
       icon: Ticket,
-      current: location.pathname.startsWith("/admin/tickets")
+      current: location.pathname.startsWith("/admin/tickets"),
     },
     {
       name: "Sơ đồ ghế",
       href: "/admin/seats",
       icon: MapPin,
-      current: location.pathname.startsWith("/admin/seats")
+      current: location.pathname.startsWith("/admin/seats"),
     },
     {
       name: "Suất chiếu",
       href: "/admin/showtimes",
       icon: Calendar,
-      current: location.pathname.startsWith("/admin/showtimes")
+      current: location.pathname.startsWith("/admin/showtimes"),
     },
     {
       name: "Nhân viên",
       href: "/admin/staff",
       icon: Users,
-      current: location.pathname.startsWith("/admin/staff")
+      current: location.pathname.startsWith("/admin/staff"),
     },
     {
       name: "Đơn hàng",
       href: "/admin/orders",
       icon: ShoppingCart,
-      current: location.pathname.startsWith("/admin/orders")
+      current: location.pathname.startsWith("/admin/orders"),
     },
     {
       name: "Giao dịch",
       href: "/admin/transactions",
       icon: CreditCard,
-      current: location.pathname.startsWith("/admin/transactions")
-    }
+      current: location.pathname.startsWith("/admin/transactions"),
+    },
   ];
 
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({ title: "Lỗi", description: "Không thể đăng xuất", variant: "destructive" });
-    } else {
-      toast({ title: "Đăng xuất thành công" });
-      window.location.href = "/auth";
+  // ✅ Cập nhật lại hàm đăng xuất
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem("admin-auth");
+      toast({
+        title: "Đăng xuất thành công",
+        description: "Phiên quản trị đã kết thúc.",
+      });
+      setTimeout(() => {
+        window.location.href = "/admin/login";
+      }, 800);
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể đăng xuất",
+        variant: "destructive",
+      });
     }
   };
 
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile sidebar */}
-      <div className={cn(
-        "fixed inset-0 z-50 lg:hidden",
-        sidebarOpen ? "block" : "hidden"
-      )}>
-        <div className="fixed inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
+      <div
+        className={cn(
+          "fixed inset-0 z-50 lg:hidden",
+          sidebarOpen ? "block" : "hidden"
+        )}
+      >
+        <div
+          className="fixed inset-0 bg-black/50"
+          onClick={() => setSidebarOpen(false)}
+        />
         <div className="fixed left-0 top-0 h-full w-64 bg-card border-r border-border">
           <div className="flex items-center justify-between p-4 border-b border-border">
-            <h2 className="text-lg font-semibold text-foreground">Admin Panel</h2>
-            <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(false)}>
+            <h2 className="text-lg font-semibold text-foreground">
+              Admin Panel
+            </h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSidebarOpen(false)}
+            >
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -128,7 +147,9 @@ const AdminLayout = () => {
         <div className="flex h-full flex-col">
           <div className="flex items-center gap-2 p-4 border-b border-border">
             <Film className="h-6 w-6 text-primary" />
-            <h2 className="text-lg font-semibold text-foreground">Admin Panel</h2>
+            <h2 className="text-lg font-semibold text-foreground">
+              Admin Panel
+            </h2>
           </div>
           <nav className="flex-1 p-4 space-y-2">
             {navigation.map((item) => (
@@ -148,7 +169,11 @@ const AdminLayout = () => {
             ))}
           </nav>
           <div className="p-4 border-t border-border">
-            <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
+            <Button
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={handleLogout}
+            >
               <LogOut className="h-4 w-4 mr-2" />
               Đăng xuất
             </Button>
@@ -158,7 +183,6 @@ const AdminLayout = () => {
 
       {/* Main content */}
       <div className="lg:pl-64">
-        {/* Top bar */}
         <div className="sticky top-0 z-40 bg-card/50 backdrop-blur-sm border-b border-border">
           <div className="flex h-16 items-center justify-between px-4">
             <Button
@@ -170,14 +194,15 @@ const AdminLayout = () => {
               <Menu className="h-4 w-4" />
             </Button>
             <div className="flex items-center gap-4">
-              <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
+              <Badge
+                variant="secondary"
+                className="bg-secondary text-secondary-foreground"
+              >
                 Quản trị viên
               </Badge>
             </div>
           </div>
         </div>
-
-        {/* Page content */}
         <main className="p-6">
           <Outlet />
         </main>
@@ -193,36 +218,38 @@ const AdminDashboard = () => {
       value: "24",
       change: "+2",
       changeType: "positive",
-      icon: Film
+      icon: Film,
     },
     {
       title: "Vé đã bán hôm nay",
       value: "156",
       change: "+12%",
       changeType: "positive",
-      icon: Ticket
+      icon: Ticket,
     },
     {
       title: "Doanh thu hôm nay",
       value: "₫2,340,000",
       change: "+8%",
       changeType: "positive",
-      icon: CreditCard
+      icon: CreditCard,
     },
     {
       title: "Đơn hàng mới",
       value: "23",
       change: "+5",
       changeType: "positive",
-      icon: ShoppingCart
-    }
+      icon: ShoppingCart,
+    },
   ];
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground">Tổng quan hệ thống quản lý rạp phim</p>
+        <p className="text-muted-foreground">
+          Tổng quan hệ thống quản lý rạp phim
+        </p>
       </div>
 
       {/* Stats grid */}
@@ -236,15 +263,21 @@ const AdminDashboard = () => {
               <stat.icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+              <div className="text-2xl font-bold text-foreground">
+                {stat.value}
+              </div>
               <p className="text-xs text-muted-foreground">
-                <span className={cn(
-                  "inline-flex items-center",
-                  stat.changeType === "positive" ? "text-green-600" : "text-red-600"
-                )}>
+                <span
+                  className={cn(
+                    "inline-flex items-center",
+                    stat.changeType === "positive"
+                      ? "text-green-600"
+                      : "text-red-600"
+                  )}
+                >
                   {stat.change}
-                </span>
-                {" "}so với hôm qua
+                </span>{" "}
+                so với hôm qua
               </p>
             </CardContent>
           </Card>

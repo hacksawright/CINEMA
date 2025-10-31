@@ -18,6 +18,10 @@ import StaffManagement from "./pages/admin/StaffManagement.jsx";
 import OrderManagement from "./pages/admin/OrderManagement.jsx";
 import TransactionManagement from "./pages/admin/TransactionManagement.jsx";
 
+// 🆕 import thêm cho hệ thống đăng nhập quản trị
+import AdminRoutes from "./pages/AdminRoutes.jsx";
+import AdminLogin from "./pages/admin/AdminLogin.jsx";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -27,24 +31,30 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* Client routes */}
           <Route path="/" element={<MoviesPage />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/movie/:id" element={<MovieDetail />} />
           <Route path="/booking/:showtimeId" element={<Booking />} />
           <Route path="/account" element={<Account />} />
-          
-          {/* Admin routes */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="movies" element={<MovieManagement />} />
-            <Route path="tickets" element={<TicketManagement />} />
-            <Route path="seats" element={<SeatManagement />} />
-            <Route path="showtimes" element={<ShowtimeManagement />} />
-            <Route path="staff" element={<StaffManagement />} />
-            <Route path="orders" element={<OrderManagement />} />
-            <Route path="transactions" element={<TransactionManagement />} />
+
+          {/* 🧩 Admin routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route element={<AdminRoutes />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="dashboard" element={<AdminDashboard />} /> {}
+              <Route path="movies" element={<MovieManagement />} />
+              <Route path="tickets" element={<TicketManagement />} />
+              <Route path="seats" element={<SeatManagement />} />
+              <Route path="showtimes" element={<ShowtimeManagement />} />
+              <Route path="staff" element={<StaffManagement />} />
+              <Route path="orders" element={<OrderManagement />} />
+              <Route path="transactions" element={<TransactionManagement />} />
+            </Route>
           </Route>
-          
+
+          {/* Not found */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
@@ -53,5 +63,3 @@ const App = () => (
 );
 
 export default App;
-
-
