@@ -1,8 +1,14 @@
 package com.cinema.dto;
 
 import com.cinema.model.Movie;
+import com.cinema.model.Showtime;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+// CHÚ Ý: Đảm bảo bạn đã tạo ShowtimeResponse.java để import này hoạt động
+// import com.cinema.dto.ShowtimeResponse; // Cần thiết
 
 public class MovieResponse {
 
@@ -17,13 +23,17 @@ public class MovieResponse {
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    
+   
+    private Set<ShowtimeResponse> showtimes; 
 
-    // Constructors
+    
     public MovieResponse() {}
 
+
     public MovieResponse(Long id, String title, String description, String genre, Integer durationMinutes,
-                        String rating, LocalDate releaseDate, String posterUrl, String status,
-                        LocalDateTime createdAt, LocalDateTime updatedAt) {
+                         String rating, LocalDate releaseDate, String posterUrl, String status,
+                         LocalDateTime createdAt, LocalDateTime updatedAt, Set<ShowtimeResponse> showtimes) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -35,10 +45,22 @@ public class MovieResponse {
         this.status = status;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.showtimes = showtimes; 
     }
 
-    // Static method to convert Entity to DTO
     public static MovieResponse fromEntity(Movie movie) {
+        
+        
+        Set<ShowtimeResponse> showtimeResponses = null;
+        if (movie.getShowtimes() != null) {
+        
+            showtimeResponses = movie.getShowtimes().stream()
+                
+                .map(ShowtimeResponse::fromEntity) 
+                .collect(Collectors.toSet());
+        }
+        
+
         return new MovieResponse(
                 movie.getId(),
                 movie.getTitle(),
@@ -50,109 +72,49 @@ public class MovieResponse {
                 movie.getPosterUrl(),
                 movie.getStatus(),
                 movie.getCreatedAt(),
-                movie.getUpdatedAt()
+                movie.getUpdatedAt(),
+                showtimeResponses 
         );
     }
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
+    
+    public Set<ShowtimeResponse> getShowtimes() {
+        return showtimes;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setShowtimes(Set<ShowtimeResponse> showtimes) {
+        this.showtimes = showtimes;
     }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getGenre() {
-        return genre;
-    }
-
-    public void setGenre(String genre) {
-        this.genre = genre;
-    }
-
-    public Integer getDurationMinutes() {
-        return durationMinutes;
-    }
-
-    public void setDurationMinutes(Integer durationMinutes) {
-        this.durationMinutes = durationMinutes;
-    }
-
-    public String getRating() {
-        return rating;
-    }
-
-    public void setRating(String rating) {
-        this.rating = rating;
-    }
-
-    public LocalDate getReleaseDate() {
-        return releaseDate;
-    }
-
-    public void setReleaseDate(LocalDate releaseDate) {
-        this.releaseDate = releaseDate;
-    }
-
-    public String getPosterUrl() {
-        return posterUrl;
-    }
-
-    public void setPosterUrl(String posterUrl) {
-        this.posterUrl = posterUrl;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+    
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public String getGenre() { return genre; }
+    public void setGenre(String genre) { this.genre = genre; }
+    public Integer getDurationMinutes() { return durationMinutes; }
+    public void setDurationMinutes(Integer durationMinutes) { this.durationMinutes = durationMinutes; }
+    public String getRating() { return rating; }
+    public void setRating(String rating) { this.rating = rating; }
+    public LocalDate getReleaseDate() { return releaseDate; }
+    public void setReleaseDate(LocalDate releaseDate) { this.releaseDate = releaseDate; }
+    public String getPosterUrl() { return posterUrl; }
+    public void setPosterUrl(String posterUrl) { this.posterUrl = posterUrl; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
     @Override
     public String toString() {
         return "MovieResponse{" +
                 "id=" + id +
                 ", title='" + title + '\'' +
-                ", genre='" + genre + '\'' +
-                ", durationMinutes=" + durationMinutes +
-                ", status='" + status + '\'' +
-                ", releaseDate=" + releaseDate +
-                ", createdAt=" + createdAt +
+                ", showtimesSize=" + (showtimes != null ? showtimes.size() : 0) +
                 '}';
     }
 }

@@ -3,9 +3,14 @@ package com.cinema.model;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.HashSet; 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "movies")
+// Thêm JsonIgnoreProperties để tránh lỗi Lazy Loading khi serializer chạy
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) 
 public class Movie {
 
     @Id
@@ -35,6 +40,10 @@ public class Movie {
 
     @Column(name = "status", length = 50)
     private String status;
+    // THÊM: SHOWTIMES
+    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private Set<Showtime> showtimes = new HashSet<>(); 
+
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -42,11 +51,11 @@ public class Movie {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Constructors
     public Movie() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
+    
 
     public Movie(String title, String description, Integer durationMinutes, String rating, 
                  LocalDate releaseDate, String genre, String posterUrl, String status) {
@@ -61,7 +70,6 @@ public class Movie {
         this.status = status;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -134,6 +142,15 @@ public class Movie {
         this.status = status;
     }
 
+    public Set<Showtime> getShowtimes() {
+        return showtimes;
+    }
+
+    public void setShowtimes(Set<Showtime> showtimes) {
+        this.showtimes = showtimes;
+    }
+
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -150,7 +167,7 @@ public class Movie {
         this.updatedAt = updatedAt;
     }
 
-    // JPA Lifecycle callbacks
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -171,6 +188,8 @@ public class Movie {
                 ", durationMinutes=" + durationMinutes +
                 ", status='" + status + '\'' +
                 ", releaseDate=" + releaseDate +
+
+                ", showtimesSize=" + (showtimes != null ? showtimes.size() : 0) + 
                 '}';
     }
 }

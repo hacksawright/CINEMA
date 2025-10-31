@@ -128,6 +128,10 @@ public class MovieServiceImpl implements MovieService {
         Movie movie = movieRepository.findById(id)
                 .orElseThrow(() -> new MovieNotFoundException(id));
         
+        if (movie.getShowtimes() != null) {
+            movie.getShowtimes().size(); 
+        }
+
         return MovieResponse.fromEntity(movie);
     }
 
