@@ -18,6 +18,12 @@ public class Ticket {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // ********** PHẦN BỔ SUNG QUAN TRỌNG **********
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id") // Thêm cột order_id để liên kết với Order
+    private Order order; 
+    // **********************************************
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "showtime_id", nullable = false)
     private Showtime showtime;
@@ -42,4 +48,5 @@ public class Ticket {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
 }

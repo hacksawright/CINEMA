@@ -16,4 +16,5 @@ public class SeatDTO {
     @NotBlank
     @Size(max = 30)
     private String type;
+    private boolean isBooked;
 }

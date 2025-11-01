@@ -40,7 +40,7 @@ export default function Account() {
     // 2. HÀM TẢI ĐẶT VÉ (GỌI API JAVA)
     const fetchBookings = async (userId, token) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/bookings/user/${userId}`, {
+            const response = await fetch(`${API_BASE_URL}/booking/user/${userId}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`, // GỬI TOKEN XÁC THỰC

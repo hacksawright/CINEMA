@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/booking")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:8081") 
 public class BookingController {
 
     private final ShowtimeSeatService showtimeService;
