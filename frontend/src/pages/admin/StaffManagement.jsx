@@ -147,16 +147,11 @@ const StaffManagement = () => {
       role: staffMember?.role || "ticket_seller",
       status: staffMember?.status || "active",
       address: staffMember?.address || "",
-      password: "",
-      confirmPassword: "",
     });
 
     const handleSubmit = (e) => {
       e.preventDefault();
-      if (!staffMember && formData.password !== formData.confirmPassword) {
-        toast({ title: "⚠️ Mật khẩu không khớp", variant: "destructive" });
-        return;
-      }
+
       if (staffMember) {
         updateMutation.mutate({ id: staffMember.id, data: formData });
       } else {
@@ -246,33 +241,6 @@ const StaffManagement = () => {
             rows={2}
           />
         </div>
-
-        {!staffMember && (
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Mật khẩu</Label>
-              <Input
-                type="password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                required
-              />
-            </div>
-            <div>
-              <Label>Xác nhận mật khẩu</Label>
-              <Input
-                type="password"
-                value={formData.confirmPassword}
-                onChange={(e) =>
-                  setFormData({ ...formData, confirmPassword: e.target.value })
-                }
-                required
-              />
-            </div>
-          </div>
-        )}
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onClose}>

@@ -140,15 +140,7 @@ export const Layout = ({ children }) => {
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">Dịch Vụ</h3>
-              <div className="space-y-2">
-                <p className="text-muted-foreground">Đặt vé online</p>
-                <p className="text-muted-foreground">Ghế VIP</p>
-                <p className="text-muted-foreground">Combo gia đình</p>
-                <p className="text-muted-foreground">Khuyến mãi</p>
-              </div>
-            </div>
+            
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-foreground">Liên Hệ</h3>

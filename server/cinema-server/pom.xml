@@ -129,15 +129,18 @@
             </plugin>
 
             <!-- Flyway Maven Plugin -->
-            <plugin>
-                <groupId>org.flywaydb</groupId>
-                <artifactId>flyway-maven-plugin</artifactId>
-                <configuration>
-                    <url><![CDATA[jdbc:mysql://localhost:3307/cinema_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC]]></url>
-                    <user>root</user>
-                    <password>password</password>
-                </configuration>
-            </plugin>
+           
+<plugin>
+    <groupId>org.flywaydb</groupId>
+    <artifactId>flyway-maven-plugin</artifactId>
+    <version>10.10.0</version>
+    <configuration>
+        <url><![CDATA[jdbc:mysql://127.0.0.1:3307/cinema_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC]]></url>
+        <user>root</user>
+        <password>thuan0701</password>
+    </configuration>
+</plugin>
+
         </plugins>
     </build>
 
