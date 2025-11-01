@@ -27,12 +27,12 @@ public class BookingServiceImpl implements BookingService {
     private final UserRepository userRepository; 
     private final TransactionRepository transactionRepository;
 
+
     @Override
     @Transactional
-    public BookingResponseDTO createBooking(BookingRequestDTO request) {
+    public BookingResponseDTO createBooking(Long userId, BookingRequestDTO request) { 
 
-        // ✅ Dùng userId từ request thay vì token
-        Long userId = request.getUserId();
+        // Lấy User từ tham số (userId được lấy từ DTO hoặc Principal ở Controller)
         if (userId == null) {
             throw new IllegalArgumentException("User ID is required to create a booking.");
         }
@@ -55,12 +55,12 @@ public class BookingServiceImpl implements BookingService {
         LocalDateTime paidAt = null;
 
         if ("cash".equalsIgnoreCase(request.getPaymentMethod())) {
-            nextTicketStatus = "SOLD";
+            nextTicketStatus = "SOLD"; // Ghế phải đổi màu đỏ ngay lập tức
             orderStatus = "COMPLETED";
             transactionStatus = "SUCCESS";
             paidAt = LocalDateTime.now();
         } else {
-            nextTicketStatus = "BOOKED";
+            nextTicketStatus = "BOOKED"; // Ghế phải đổi màu đỏ ngay lập tức
             orderStatus = "PROCESSING";
             transactionStatus = "PENDING";
         }
@@ -100,7 +100,7 @@ public class BookingServiceImpl implements BookingService {
             totalAmount = totalAmount.add(ticket.getPrice());
         }
 
-        // ✅ Tạo Order
+        // Tạo Order
         Order newOrder = new Order();
         newOrder.setUser(currentUser);
         newOrder.setTotalAmount(totalAmount);
@@ -111,13 +111,13 @@ public class BookingServiceImpl implements BookingService {
 
         Order savedOrder = orderRepository.save(newOrder);
 
-        // ✅ Cập nhật vé
+        // Cập nhật vé (Đã lưu trạng thái mới ở đây)
         for (Ticket ticket : ticketsForOrder) {
             ticket.setOrder(savedOrder);
             ticketRepository.save(ticket);
         }
 
-        // ✅ Tạo Transaction
+        // Tạo Transaction
         Transaction transaction = new Transaction();
         transaction.setOrder(savedOrder);
         transaction.setAmount(totalAmount);
@@ -126,7 +126,7 @@ public class BookingServiceImpl implements BookingService {
         transaction.setPaidAt(paidAt);
         transactionRepository.save(transaction);
 
-        // ✅ Trả về Response
+        // Trả về Response
         return BookingResponseDTO.builder()
                 .bookingId(savedOrder.getId())
                 .ticketCode(savedOrder.getTicketCode())

@@ -47,12 +47,11 @@ export default function Booking() {
 
   const fetchShowtimeDetails = async () => {
     try {
-        // ********** GỌI API BACKEND ĐỂ LẤY THÔNG TIN **********
-        // Đã sửa endpoint thành /api/showtimes/{id}/details để phù hợp với logic ban đầu của Backend
         const response = await axios.get(`${API_BASE_URL}/showtimes/${showtimeId}/details`);
         const data = response.data; // Dữ liệu từ ShowtimeDetailResponse DTO
         
-        // Ánh xạ dữ liệu từ Backend DTO sang state Frontend
+        console.log("🎬 API trả về:", data);
+
         setShowtime({
             id: data.showtimeId,
             movie: { title: data.movieTitle },
@@ -64,7 +63,8 @@ export default function Booking() {
             },
         });
         // Lấy danh sách mã ghế đã đặt
-        setBookedSeatCodes(data.bookedSeatIds || []); 
+        setBookedSeatCodes(data.bookedSeatCodes || []);
+ 
         
     } catch (error) {
         console.error("API Fetch Error:", error);
@@ -84,31 +84,43 @@ export default function Booking() {
 
     setSubmitting(true);
     try {
-        // Lấy token từ sessionStorage
-        const userId = sessionStorage.getItem('userId');
-        
-        // Kiểm tra xem token có tồn tại không
-        if (!userId) {
-            toast({ title: "Authentication Error", description: "Vui lòng đăng nhập để đặt vé.", variant: "destructive" });
-            navigate("/login");
-            return;
-        }
+        // Lấy token từ sessionStorage
+        const userId = sessionStorage.getItem('userId'); 
+        // Kiểm tra xem token có tồn tại không
+        if (!userId) { 
+            toast({ title: "Authentication Error", description: "Vui lòng đăng nhập để đặt vé.", variant: "destructive" });
+            navigate("/login"); 
+            return;
+        }
         
         const requestBody = {
             showtimeId: parseInt(showtimeId),
             selectedSeats: selectedSeats, 
             paymentMethod: paymentMethod,
-             userId: parseInt(userId)
+            userId: parseInt(userId) 
         };
 
-        // ********** GỌI API TẠO BOOKING VÀ THÊM HEADER AUTHORIZATION **********
         const response = await axios.post(`${API_BASE_URL}/booking`, requestBody, {
+
         }); 
 
         const ticketCode = response.data.ticketCode; 
 
-        toast({ title: "Booking successful!", description: `Mã vé của bạn: ${ticketCode}`, variant: "success" });
-        navigate("/account");
+        toast({ 
+  title: "Booking successful!", 
+  description: `Mã vé của bạn: ${ticketCode}`, 
+  variant: "success" 
+});
+
+// ⚡ Cập nhật giao diện ngay lập tức
+setBookedSeatCodes((prev) => [...prev, ...selectedSeats]);
+
+// Xóa danh sách ghế đang chọn
+setSelectedSeats([]);
+
+// Gọi lại API để đồng bộ hóa dữ liệu chính xác từ backend (nếu cần)
+await fetchShowtimeDetails();
+        
     } catch (error) { 
         // Xử lý lỗi 403 Forbidden (không xác thực) hoặc lỗi nghiệp vụ (ghế đã bị chiếm)
         const status = error.response?.status;
@@ -148,78 +160,91 @@ export default function Booking() {
   }
   
 
-  return (
-    <Layout>
-      {/* Đã sửa lỗi layout: Căn lề trái, loại bỏ mx-auto ở đây */}
-      <div className="px-4 py-12 max-w-7xl"> 
-        <h1 className="text-3xl font-bold mb-8">Book Your Seats</h1>
-        
-        <div className="grid lg:grid-cols-[1fr_400px] gap-8">
-          <div>
-            <Card className="mb-6 border-border">
-              <CardHeader>
-                <CardTitle>{showtime.movie.title}</CardTitle>
-                <p className="text-muted-foreground">
-                  {/* Đã sửa lỗi format ngày tháng */}
-                  {format(showtime.starts_at, "EEEE, MMMM d, yyyy")} at {format(showtime.starts_at, "HH:mm")}
-                </p>
-              </CardHeader>
-            </Card>
+return (
+  <Layout>
+    <div className="px-4 py-12 max-w-7xl mx-auto"> 
+      <h1 className="text-3xl font-bold mb-8">Book Your Seats</h1>
 
-            <SeatSelection
-              totalRows={showtime.theater.total_rows}
-              seatsPerRow={showtime.theater.seats_per_row}
-              bookedSeats={bookedSeatCodes}
-              onSeatsChange={setSelectedSeats}
-            />
-          </div>
+      <div className="grid lg:grid-cols-[1fr_400px] gap-8">
+        {/* Cột trái: chọn ghế */}
+        <div>
+          <Card className="mb-6 border-border">
+            <CardHeader>
+              <CardTitle>{showtime?.movie?.title}</CardTitle>
+              <p className="text-muted-foreground">
+                {showtime?.starts_at instanceof Date && !isNaN(showtime.starts_at)
+                  ? `${format(showtime.starts_at, "EEEE, MMMM d, yyyy")} at ${format(showtime.starts_at, "HH:mm")}`
+                  : "Đang tải thông tin..."}
+              </p>
+            </CardHeader>
+          </Card>
 
-          <div className="lg:sticky lg:top-24 h-fit">
-            <Card className="border-border">
-              <CardHeader>
-                <CardTitle>Booking Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Selected Seats</p>
-                  <p className="font-semibold">{selectedSeats.length > 0 ? selectedSeats.join(", ") : "None"}</p>
-                </div>
+          <SeatSelection
+            totalRows={showtime?.theater?.total_rows}
+            seatsPerRow={showtime?.theater?.seats_per_row}
+            bookedSeats={bookedSeatCodes}
+            onSeatsChange={setSelectedSeats}
+          />
+        </div>
 
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Price per seat</p>
-                  {/* Đã sửa lỗi: Dùng formatVND */}
-                  <p className="font-semibold">{formatVND(showtime?.price)}</p>
-                </div>
+        {/* ✅ Cột phải: Booking Summary (được căn giữa) */}
+        <div className="flex justify-center items-center lg:sticky lg:top-24 h-fit">
+          <Card className="border-border w-full max-w-sm">
+            <CardHeader>
+              <CardTitle>Booking Summary</CardTitle>
+            </CardHeader>
 
-                <div className="border-t border-border pt-4">
-                  <p className="text-sm text-muted-foreground mb-1">Total Amount</p>
-                  {/* Đã sửa lỗi: Dùng formatVND */}
-                  <p className="text-2xl font-bold text-primary">{formatVND(totalAmount)}</p>
-                </div>
+            <CardContent className="space-y-6">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Selected Seats</p>
+                <p className="font-semibold">
+                  {selectedSeats.length > 0 ? selectedSeats.join(", ") : "None"}
+                </p>
+              </div>
 
-                <div>
-                  <Label className="text-base mb-3 block">Payment Method</Label>
-                  <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <div className="flex items-center space-x-2 mb-2">
-                      <RadioGroupItem value="cash" id="cash" />
-                      <Label htmlFor="cash" className="cursor-pointer">Cash (Pay at counter)</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="bank_transfer" id="bank" />
-                      <Label htmlFor="bank" className="cursor-pointer">Bank Transfer</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Price per seat</p>
+                <p className="font-semibold">{formatVND(showtime?.price)}</p>
+              </div>
 
-                <Button onClick={handleBooking} disabled={selectedSeats.length === 0 || submitting} className="w-full" size="lg">
-                  {submitting ? "Processing..." : "Confirm Booking"}
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-        <div className="my-8 h-4"></div> {/* Vùng đệm */}
-      </div>
-    </Layout>
-  );
+              <div className="border-t border-border pt-4">
+                <p className="text-sm text-muted-foreground mb-1">Total Amount</p>
+                <p className="text-2xl font-bold text-primary">{formatVND(totalAmount)}</p>
+              </div>
+
+              <div>
+                <Label className="text-base mb-3 block">Payment Method</Label>
+                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <RadioGroupItem value="cash" id="cash" />
+                    <Label htmlFor="cash" className="cursor-pointer">
+                      Cash (Pay at counter)
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="bank_transfer" id="bank" />
+                    <Label htmlFor="bank" className="cursor-pointer">
+                      Bank Transfer
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <Button
+                onClick={handleBooking}
+                disabled={selectedSeats.length === 0 || submitting}
+                className="w-full"
+                size="lg"
+              >
+                {submitting ? "Processing..." : "Confirm Booking"}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <div className="my-8 h-4"></div> {/* Vùng đệm */}
+    </div>
+  </Layout>
+);
 }

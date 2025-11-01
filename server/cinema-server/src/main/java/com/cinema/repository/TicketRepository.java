@@ -11,6 +11,6 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     List<Ticket> findByShowtimeIdAndSeatId(Long showtimeId, Long seatId); 
     
     // Hoặc sử dụng mối quan hệ trực tiếp (tốt hơn):
-    List<Ticket> findByShowtime_IdAndSeat_Id(Long showtimeId, Long seatId);
+ 
     Set<Ticket> findByShowtime_IdAndStatusIn(Long showtimeId, List<String> statuses);
 }

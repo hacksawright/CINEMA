@@ -1,10 +1,10 @@
-// src/main/java/com.cinema/controller/AuthController.java
+
 
 package com.cinema.controller;
 
 import com.cinema.dto.LoginRequest;
 import com.cinema.dto.RegistrationRequest;
-import com.cinema.dto.LoginResponse; // Đã sửa lỗi: Import LoginResponse từ package dto
+import com.cinema.dto.LoginResponse;
 import com.cinema.service.AuthService;
 
 import org.springframework.http.HttpStatus;
