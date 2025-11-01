@@ -74,6 +74,10 @@ All colors MUST be HSL.
     --ring: 350 90% 60%;
   }
 }
+.calendar-white::-webkit-calendar-picker-indicator {
+  filter: invert(1); /* Đảo màu -> icon trắng */
+  cursor: pointer;
+}
 
 @layer base {
   * {

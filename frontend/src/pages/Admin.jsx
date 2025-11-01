@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -187,35 +187,38 @@ const AdminLayout = () => {
 };
 
 const AdminDashboard = () => {
-  const stats = [
-    {
-      title: "Tổng phim",
-      value: "24",
-      change: "+2",
-      changeType: "positive",
-      icon: Film
-    },
-    {
-      title: "Vé đã bán hôm nay",
-      value: "156",
-      change: "+12%",
-      changeType: "positive",
-      icon: Ticket
-    },
-    {
-      title: "Doanh thu hôm nay",
-      value: "₫2,340,000",
-      change: "+8%",
-      changeType: "positive",
-      icon: CreditCard
-    },
-    {
-      title: "Đơn hàng mới",
-      value: "23",
-      change: "+5",
-      changeType: "positive",
-      icon: ShoppingCart
-    }
+  const [stats, setStats] = useState({
+    totalMovies: 0,
+    ticketsSold: 0,
+    revenue: 0.0,
+    ordersNew: 0
+  });
+
+  useEffect(() => {
+    const fetchDailyReport = async () => {
+      try {
+        const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+        const res = await fetch(`http://localhost:8000/api/reports/daily?date=${today}`);
+        if (!res.ok) throw new Error("Failed to fetch daily report");
+        const data = await res.json();
+        setStats({
+          totalMovies: data.totalMovies,
+          ticketsSold: data.ticketsSold,
+          revenue: data.revenue,
+          ordersNew: 0
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchDailyReport();
+  }, []);
+
+  const dashboardStats = [
+    { title: "Tổng phim", value: stats.totalMovies.toString(), icon: Film },
+    { title: "Vé đã bán hôm nay", value: stats.ticketsSold.toString(), icon: Ticket },
+    { title: "Doanh thu hôm nay", value: stats.revenue.toLocaleString("vi-VN", { style: "currency", currency: "VND" }), icon: CreditCard },
   ];
 
   return (
@@ -226,8 +229,8 @@ const AdminDashboard = () => {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {dashboardStats.map((stat) => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -237,15 +240,6 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className={cn(
-                  "inline-flex items-center",
-                  stat.changeType === "positive" ? "text-green-600" : "text-red-600"
-                )}>
-                  {stat.change}
-                </span>
-                {" "}so với hôm qua
-              </p>
             </CardContent>
           </Card>
         ))}
@@ -272,7 +266,7 @@ const AdminDashboard = () => {
             </Button>
             <Button asChild variant="outline" className="h-20 flex-col gap-2">
               <Link to="/admin/transactions">
-                <BarChart3 className="h-6 w-6" />
+                <CreditCard className="h-6 w-6" />
                 <span>Xem báo cáo</span>
               </Link>
             </Button>
