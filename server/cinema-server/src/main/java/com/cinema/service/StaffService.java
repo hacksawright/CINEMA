@@ -14,30 +14,33 @@ public class StaffService {
         this.repository = repository;
     }
 
+    // Lấy danh sách toàn bộ nhân viên
     public List<Staff> getAll() {
         return repository.findAll();
     }
 
+    // Tạo mới nhân viên
     public Staff create(Staff s) {
+        // Đảm bảo tất cả fields được set, bao gồm address
         return repository.save(s);
     }
 
+    // Cập nhật thông tin nhân viên
     public Staff update(Long id, Staff s) {
-    Staff existing = repository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Staff not found"));
+        Staff existing = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Staff not found"));
 
-    existing.setName(s.getName());
-    existing.setPosition(s.getPosition());
-    existing.setEmail(s.getEmail());
-    existing.setPhone(s.getPhone());
-    existing.setSalary(s.getSalary());
-    existing.setRole(s.getRole());
-    existing.setStatus(s.getStatus()); // ✅ thêm dòng này để cập nhật trạng thái
+        existing.setName(s.getName());
+        existing.setEmail(s.getEmail());
+        existing.setPhone(s.getPhone());
+        existing.setRole(s.getRole());
+        existing.setStatus(s.getStatus());
+        existing.setAddress(s.getAddress()); // Lưu địa chỉ
 
-    return repository.save(existing);
-}
+        return repository.save(existing);
+    }
 
-
+    // Xóa nhân viên
     public void delete(Long id) {
         repository.deleteById(id);
     }

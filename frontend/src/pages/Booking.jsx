@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from 'axios';
+import { api } from "@/services/api.js";
 import { Layout } from "@/components/Layout.jsx";
 import { SeatSelection } from "@/components/SeatSelection.jsx";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-
-// Cổng của Backend Server. Thay đổi cổng này nếu Backend không chạy ở 8080.
-const API_BASE_URL = 'http://localhost:8080/api'; 
+import { format } from "date-fns"; 
 
 // Hàm helper để định dạng tiền tệ sang VND
 const formatVND = (amount) => {
@@ -53,8 +50,11 @@ export default function Booking() {
 
   const fetchShowtimeDetails = async () => {
     try {
+        const apiUrl = `/showtimes/${showtimeId}/details`;
         console.log("🔄 Đang tải thông tin showtime ID:", showtimeId);
-        const response = await axios.get(`${API_BASE_URL}/showtimes/${showtimeId}/details`);
+        console.log("🌐 API URL:", apiUrl);
+        
+        const response = await api.get(apiUrl);
         const data = response.data; // Dữ liệu từ ShowtimeDetailResponse DTO
         
         console.log("🎬 API trả về:", data);
@@ -145,9 +145,7 @@ export default function Booking() {
             userId: parseInt(userId) 
         };
 
-        const response = await axios.post(`${API_BASE_URL}/booking`, requestBody, {
-
-        }); 
+        const response = await api.post('/booking', requestBody); 
 
         const ticketCode = response.data.ticketCode; 
 

@@ -423,11 +423,6 @@ export default function MoviesPage() {
             <Card className="overflow-hidden bg-gradient-to-br from-red-800/40 to-gray-900 border-red-900/30 hover:shadow-lg transition-all duration-300">
               <CardContent className="p-6 flex flex-col justify-between h-full">
                 <div>
-                  <img
-                    src="https://i1-vnexpress.vnecdn.net/2025/07/16/phim-viet-100-ty-anh-1719539250-2258-1719539494.jpg?w=680&h=0&q=100&dpr=2&fit=crop&s=nKqDJv5r5Hk8h_0sxdCcdw"
-                    alt="9 phim Việt vượt 100 tỷ đồng nửa đầu 2025"
-                    className="rounded-md mb-4"
-                  />
                   <h3 className="text-lg font-bold text-white mb-2">
                     9 phim Việt vượt 100 tỷ đồng nửa đầu năm 2025
                   </h3>
@@ -455,11 +450,6 @@ export default function MoviesPage() {
             <Card className="overflow-hidden bg-gradient-to-br from-yellow-700/40 to-gray-900 border-yellow-900/30 hover:shadow-lg transition-all duration-300">
               <CardContent className="p-6 flex flex-col justify-between h-full">
                 <div>
-                  <img
-                    src="https://nhandan.vn/imgs/2025/07/28/17/20250728170700-1.jpg"
-                    alt="Mưa Đỏ trở thành phim Việt có doanh thu cao nhất lịch sử điện ảnh"
-                    className="rounded-md mb-4"
-                  />
                   <h3 className="text-lg font-bold text-white mb-2">
                     “Mưa Đỏ” trở thành phim Việt có doanh thu cao nhất lịch sử
                     điện ảnh
@@ -488,11 +478,6 @@ export default function MoviesPage() {
             <Card className="overflow-hidden bg-gradient-to-br from-pink-800/40 to-gray-900 border-pink-900/30 hover:shadow-lg transition-all duration-300">
               <CardContent className="p-6 flex flex-col justify-between h-full">
                 <div>
-                  <img
-                    src="https://cdn.tuoitre.vn/thumb_w/730/2025/8/11/tran-thanh-tho-oi-1-1723370408377756991923.jpg"
-                    alt="Trấn Thành khởi quay phim Tết Thờ Ơi, giấu toàn bộ diễn viên"
-                    className="rounded-md mb-4"
-                  />
                   <h3 className="text-lg font-bold text-white mb-2">
                     Trấn Thành khởi quay phim Tết “Thờ Ơi”, giấu kín toàn bộ dàn
                     diễn viên

@@ -16,12 +16,9 @@ public class Staff {
     private Long id;
 
     private String name;
-    private String position;
     private String email;
     private String phone;
-    private Double salary;
-    private String role;
-
-    // 🆕 thêm trạng thái (ví dụ: "Active", "Inactive", "On Leave")
     private String status;
+    private String role;
+    private String address;
 }
