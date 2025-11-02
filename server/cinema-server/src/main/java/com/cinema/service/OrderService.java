@@ -8,16 +8,15 @@ import com.cinema.exception.ResourceNotFoundException;
 import com.cinema.repository.OrderRepository;
 import com.cinema.repository.TicketRepository;
 import com.cinema.repository.TransactionRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional; // ✅ Dùng đúng annotation của Spring
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
@@ -27,23 +26,27 @@ public class OrderService {
     private final TransactionRepository transactionRepository;
     private final TicketRepository ticketRepository;
 
+    // ✅ Thêm transactional để Hibernate giữ session mở khi đọc dữ liệu
+    @Transactional(readOnly = true)
     public List<OrderSummaryDTO> getAllOrdersForAdmin() {
         List<Order> orders = orderRepository.findAllWithDetails();
         return orders.stream().map(this::mapToOrderSummaryDTO).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<OrderSummaryDTO> getUserOrders(Long userId) {
         List<Order> orders = orderRepository.findByUserIdWithDetails(userId);
         return orders.stream().map(this::mapToOrderSummaryDTO).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public OrderDetailDTO getOrderDetail(Long orderId) {
         Order order = orderRepository.findByIdWithDetails(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
         return mapToOrderDetailDTO(order);
     }
 
-    @Transactional
+    @Transactional // vẫn giữ transactional vì có thao tác update
     public OrderDetailDTO updateOrderStatus(Long orderId, String newStatus) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
@@ -62,20 +65,22 @@ public class OrderService {
         if ("CANCELLED".equals(upperNewStatus) || "REFUNDED".equals(upperNewStatus)) {
             if (order.getTickets() != null && !order.getTickets().isEmpty()) {
                 List<Ticket> ticketsToUpdate = order.getTickets().stream()
-                 .filter(ticket -> !"CANCELLED".equals(ticket.getStatus()) && !"AVAILABLE".equalsIgnoreCase(ticket.getStatus()))
-                 .peek(ticket -> ticket.setStatus("AVAILABLE"))
-                 .collect(Collectors.toList());
-                 if(!ticketsToUpdate.isEmpty()){
-                     ticketRepository.saveAll(ticketsToUpdate);
-                 }
+                        .filter(ticket -> !"CANCELLED".equals(ticket.getStatus()) && !"AVAILABLE".equalsIgnoreCase(ticket.getStatus()))
+                        .peek(ticket -> ticket.setStatus("AVAILABLE"))
+                        .collect(Collectors.toList());
+                if (!ticketsToUpdate.isEmpty()) {
+                    ticketRepository.saveAll(ticketsToUpdate);
+                }
             }
         }
 
         Order updatedOrder = orderRepository.save(order);
         return orderRepository.findByIdWithDetails(updatedOrder.getId())
                 .map(this::mapToOrderDetailDTO)
-                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", updatedOrder.getId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", updatedOrder.getId()));
     }
+
+    // ===================== Mapping Helpers =====================
 
     private OrderSummaryDTO mapToOrderSummaryDTO(Order order) {
         OrderSummaryDTO dto = new OrderSummaryDTO();
@@ -85,8 +90,9 @@ public class OrderService {
         dto.setCustomerPhone(order.getUser() != null ? order.getUser().getPhone() : "N/A");
 
         Optional<Ticket> firstTicket = (order.getTickets() != null && !order.getTickets().isEmpty())
-                                       ? order.getTickets().stream().findFirst()
-                                       : Optional.empty();
+                ? order.getTickets().stream().findFirst()
+                : Optional.empty();
+
         if (firstTicket.isPresent()) {
             Showtime showtime = firstTicket.get().getShowtime();
             if (showtime != null) {
@@ -95,8 +101,8 @@ public class OrderService {
                 dto.setRoomName(showtime.getRoom() != null ? showtime.getRoom().getName() : "N/A");
             }
         } else {
-             dto.setMovieTitle("N/A");
-             dto.setRoomName("N/A");
+            dto.setMovieTitle("N/A");
+            dto.setRoomName("N/A");
         }
 
         dto.setSeatLabels(order.getTickets() != null ? order.getTickets().stream()
@@ -108,16 +114,17 @@ public class OrderService {
         dto.setOrderDate(order.getCreatedAt());
 
         Optional<Transaction> relevantTransaction = (order.getTransactions() != null && !order.getTransactions().isEmpty())
-                                                   ? order.getTransactions().stream()
-                                                       .filter(tx -> "SUCCESS".equalsIgnoreCase(tx.getStatus()) || "PENDING".equalsIgnoreCase(tx.getStatus()))
-                                                       .max(Comparator.comparing(Transaction::getCreatedAt))
-                                                   : Optional.empty();
+                ? order.getTransactions().stream()
+                .filter(tx -> "SUCCESS".equalsIgnoreCase(tx.getStatus()) || "PENDING".equalsIgnoreCase(tx.getStatus()))
+                .max(Comparator.comparing(Transaction::getCreatedAt))
+                : Optional.empty();
+
         dto.setPaymentMethod(relevantTransaction.map(Transaction::getPaymentMethod).orElse("N/A"));
 
         return dto;
     }
 
-     private OrderDetailDTO mapToOrderDetailDTO(Order order) {
+    private OrderDetailDTO mapToOrderDetailDTO(Order order) {
         OrderDetailDTO dto = new OrderDetailDTO();
         OrderSummaryDTO summary = mapToOrderSummaryDTO(order);
 
@@ -133,51 +140,49 @@ public class OrderService {
         dto.setStatus(summary.getStatus());
         dto.setPaymentMethod(summary.getPaymentMethod());
         dto.setOrderDate(summary.getOrderDate());
-
         dto.setCustomerEmail(order.getUser() != null ? order.getUser().getEmail() : "N/A");
 
         dto.setTransactions((order.getTransactions() != null && !order.getTransactions().isEmpty())
-            ? order.getTransactions().stream()
+                ? order.getTransactions().stream()
                 .map(this::mapToTransactionDTO)
                 .sorted(Comparator.comparing(TransactionDTO::getTransactionDate, Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList())
-            : List.of());
+                : List.of());
 
         dto.setPaymentDate((order.getTransactions() != null && !order.getTransactions().isEmpty())
-            ? order.getTransactions().stream()
+                ? order.getTransactions().stream()
                 .filter(tx -> "SUCCESS".equalsIgnoreCase(tx.getStatus()) && tx.getPaidAt() != null)
                 .map(Transaction::getPaidAt)
                 .min(LocalDateTime::compareTo)
                 .orElse(null)
-            : null);
+                : null);
 
         return dto;
     }
 
+    private TransactionDTO mapToTransactionDTO(Transaction tx) {
+        TransactionDTO dto = new TransactionDTO();
+        dto.setId(tx.getId());
+        dto.setOrderId(tx.getOrder() != null ? tx.getOrder().getId() : null);
+        dto.setTicketCode(tx.getOrder() != null ? tx.getOrder().getTicketCode() : null);
+        dto.setAmount(tx.getAmount());
+        dto.setPaymentMethod(tx.getPaymentMethod());
+        dto.setStatus(tx.getStatus());
+        dto.setTransactionDate(tx.getCreatedAt());
+        dto.setPaidAt(tx.getPaidAt());
 
-     private TransactionDTO mapToTransactionDTO(Transaction tx) {
-         TransactionDTO dto = new TransactionDTO();
-         dto.setId(tx.getId());
-         dto.setOrderId(tx.getOrder() != null ? tx.getOrder().getId() : null);
-         dto.setTicketCode(tx.getOrder() != null ? tx.getOrder().getTicketCode() : null);
-         dto.setAmount(tx.getAmount());
-         dto.setPaymentMethod(tx.getPaymentMethod());
-         dto.setStatus(tx.getStatus());
-         dto.setTransactionDate(tx.getCreatedAt());
-         dto.setPaidAt(tx.getPaidAt());
-
-         if (tx.getOrder() != null) {
-             Order order = tx.getOrder();
-             dto.setCustomerName(order.getUser() != null ? order.getUser().getFullName() : null);
-             Optional<Ticket> firstTicket = (order.getTickets() != null && !order.getTickets().isEmpty())
-                                            ? order.getTickets().stream().findFirst()
-                                            : Optional.empty();
-             if (firstTicket.isPresent() && firstTicket.get().getShowtime() != null) {
-                 Showtime showtime = firstTicket.get().getShowtime();
-                 dto.setMovieTitle(showtime.getMovie() != null ? showtime.getMovie().getTitle() : null);
-                 dto.setShowtimeStartsAt(showtime.getStartsAt());
-             }
-         }
-         return dto;
-     }
+        if (tx.getOrder() != null) {
+            Order order = tx.getOrder();
+            dto.setCustomerName(order.getUser() != null ? order.getUser().getFullName() : null);
+            Optional<Ticket> firstTicket = (order.getTickets() != null && !order.getTickets().isEmpty())
+                    ? order.getTickets().stream().findFirst()
+                    : Optional.empty();
+            if (firstTicket.isPresent() && firstTicket.get().getShowtime() != null) {
+                Showtime showtime = firstTicket.get().getShowtime();
+                dto.setMovieTitle(showtime.getMovie() != null ? showtime.getMovie().getTitle() : null);
+                dto.setShowtimeStartsAt(showtime.getStartsAt());
+            }
+        }
+        return dto;
+    }
 }
