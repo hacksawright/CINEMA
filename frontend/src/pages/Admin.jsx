@@ -1,23 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Film,
-  Ticket,
-  MapPin,
-  Calendar,
-  Users,
-  ShoppingCart,
+import { 
+  Film, 
+  Ticket, 
+  MapPin, 
+  Calendar, 
+  Users, 
+  ShoppingCart, 
   CreditCard,
   BarChart3,
+  Settings,
   LogOut,
   Menu,
-  X,
+  X
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -26,99 +28,77 @@ const AdminLayout = () => {
 
   const navigation = [
     {
-    name: "Dashboard",
-    href: "/admin",
-    icon: BarChart3,
-    current: location.pathname.startsWith("/admin/"),
+      name: "Dashboard",
+      href: "/admin",
+      icon: BarChart3,
+      current: location.pathname === "/admin"
     },
-
     {
       name: "Quản lý phim",
       href: "/admin/movies",
       icon: Film,
-      current: location.pathname.startsWith("/admin/movies"),
+      current: location.pathname.startsWith("/admin/movies")
     },
     {
       name: "Quản lý vé",
       href: "/admin/tickets",
       icon: Ticket,
-      current: location.pathname.startsWith("/admin/tickets"),
+      current: location.pathname.startsWith("/admin/tickets")
     },
     {
       name: "Sơ đồ ghế",
       href: "/admin/seats",
       icon: MapPin,
-      current: location.pathname.startsWith("/admin/seats"),
+      current: location.pathname.startsWith("/admin/seats")
     },
     {
       name: "Suất chiếu",
       href: "/admin/showtimes",
       icon: Calendar,
-      current: location.pathname.startsWith("/admin/showtimes"),
+      current: location.pathname.startsWith("/admin/showtimes")
     },
     {
       name: "Nhân viên",
       href: "/admin/staff",
       icon: Users,
-      current: location.pathname.startsWith("/admin/staff"),
+      current: location.pathname.startsWith("/admin/staff")
     },
     {
       name: "Đơn hàng",
       href: "/admin/orders",
       icon: ShoppingCart,
-      current: location.pathname.startsWith("/admin/orders"),
+      current: location.pathname.startsWith("/admin/orders")
     },
     {
       name: "Giao dịch",
       href: "/admin/transactions",
       icon: CreditCard,
-      current: location.pathname.startsWith("/admin/transactions"),
-    },
+      current: location.pathname.startsWith("/admin/transactions")
+    }
   ];
 
-  // ✅ Cập nhật lại hàm đăng xuất
-  const handleLogout = () => {
-    try {
-      localStorage.removeItem("adminToken");
-      toast({
-        title: "Đăng xuất thành công",
-        description: "Phiên quản trị đã kết thúc.",
-      });
-      setTimeout(() => {
-        window.location.href = "/admin/login";
-      }, 800);
-    } catch (error) {
-      toast({
-        title: "Lỗi",
-        description: "Không thể đăng xuất",
-        variant: "destructive",
-      });
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({ title: "Lỗi", description: "Không thể đăng xuất", variant: "destructive" });
+    } else {
+      toast({ title: "Đăng xuất thành công" });
+      window.location.href = "/auth";
     }
   };
 
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile sidebar */}
-      <div
-        className={cn(
-          "fixed inset-0 z-50 lg:hidden",
-          sidebarOpen ? "block" : "hidden"
-        )}
-      >
-        <div
-          className="fixed inset-0 bg-black/50"
-          onClick={() => setSidebarOpen(false)}
-        />
+      <div className={cn(
+        "fixed inset-0 z-50 lg:hidden",
+        sidebarOpen ? "block" : "hidden"
+      )}>
+        <div className="fixed inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
         <div className="fixed left-0 top-0 h-full w-64 bg-card border-r border-border">
           <div className="flex items-center justify-between p-4 border-b border-border">
-            <h2 className="text-lg font-semibold text-foreground">
-              Admin Panel
-            </h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSidebarOpen(false)}
-            >
+            <h2 className="text-lg font-semibold text-foreground">Admin Panel</h2>
+            <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(false)}>
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -148,9 +128,7 @@ const AdminLayout = () => {
         <div className="flex h-full flex-col">
           <div className="flex items-center gap-2 p-4 border-b border-border">
             <Film className="h-6 w-6 text-primary" />
-            <h2 className="text-lg font-semibold text-foreground">
-              Admin Panel
-            </h2>
+            <h2 className="text-lg font-semibold text-foreground">Admin Panel</h2>
           </div>
           <nav className="flex-1 p-4 space-y-2">
             {navigation.map((item) => (
@@ -170,11 +148,7 @@ const AdminLayout = () => {
             ))}
           </nav>
           <div className="p-4 border-t border-border">
-            <Button
-              variant="ghost"
-              className="w-full justify-start"
-              onClick={handleLogout}
-            >
+            <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />
               Đăng xuất
             </Button>
@@ -184,6 +158,7 @@ const AdminLayout = () => {
 
       {/* Main content */}
       <div className="lg:pl-64">
+        {/* Top bar */}
         <div className="sticky top-0 z-40 bg-card/50 backdrop-blur-sm border-b border-border">
           <div className="flex h-16 items-center justify-between px-4">
             <Button
@@ -195,15 +170,14 @@ const AdminLayout = () => {
               <Menu className="h-4 w-4" />
             </Button>
             <div className="flex items-center gap-4">
-              <Badge
-                variant="secondary"
-                className="bg-secondary text-secondary-foreground"
-              >
+              <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
                 Quản trị viên
               </Badge>
             </div>
           </div>
         </div>
+
+        {/* Page content */}
         <main className="p-6">
           <Outlet />
         </main>
@@ -213,49 +187,50 @@ const AdminLayout = () => {
 };
 
 const AdminDashboard = () => {
-  const stats = [
-    {
-      title: "Tổng phim",
-      value: "24",
-      change: "+2",
-      changeType: "positive",
-      icon: Film,
-    },
-    {
-      title: "Vé đã bán hôm nay",
-      value: "156",
-      change: "+12%",
-      changeType: "positive",
-      icon: Ticket,
-    },
-    {
-      title: "Doanh thu hôm nay",
-      value: "₫2,340,000",
-      change: "+8%",
-      changeType: "positive",
-      icon: CreditCard,
-    },
-    {
-      title: "Đơn hàng mới",
-      value: "23",
-      change: "+5",
-      changeType: "positive",
-      icon: ShoppingCart,
-    },
+  const [stats, setStats] = useState({
+    totalMovies: 0,
+    ticketsSold: 0,
+    revenue: 0.0,
+    ordersNew: 0
+  });
+
+  useEffect(() => {
+    const fetchDailyReport = async () => {
+      try {
+        const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+        const res = await fetch(`http://localhost:8080/api/reports/daily?date=${today}`);
+        if (!res.ok) throw new Error("Failed to fetch daily report");
+        const data = await res.json();
+        setStats({
+          totalMovies: data.totalMovies,
+          ticketsSold: data.ticketsSold,
+          revenue: data.revenue,
+          ordersNew: 0
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchDailyReport();
+  }, []);
+
+  const dashboardStats = [
+    { title: "Tổng phim", value: stats.totalMovies.toString(), icon: Film },
+    { title: "Vé đã bán hôm nay", value: stats.ticketsSold.toString(), icon: Ticket },
+    { title: "Doanh thu hôm nay", value: stats.revenue.toLocaleString("vi-VN", { style: "currency", currency: "VND" }), icon: CreditCard },
   ];
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Tổng quan hệ thống quản lý rạp phim
-        </p>
+        <p className="text-muted-foreground">Tổng quan hệ thống quản lý rạp phim</p>
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {dashboardStats.map((stat) => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -264,22 +239,7 @@ const AdminDashboard = () => {
               <stat.icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {stat.value}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                <span
-                  className={cn(
-                    "inline-flex items-center",
-                    stat.changeType === "positive"
-                      ? "text-green-600"
-                      : "text-red-600"
-                  )}
-                >
-                  {stat.change}
-                </span>{" "}
-                so với hôm qua
-              </p>
+              <div className="text-2xl font-bold text-foreground">{stat.value}</div>
             </CardContent>
           </Card>
         ))}
@@ -306,7 +266,7 @@ const AdminDashboard = () => {
             </Button>
             <Button asChild variant="outline" className="h-20 flex-col gap-2">
               <Link to="/admin/transactions">
-                <BarChart3 className="h-6 w-6" />
+                <CreditCard className="h-6 w-6" />
                 <span>Xem báo cáo</span>
               </Link>
             </Button>

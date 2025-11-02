@@ -1,6 +1,5 @@
 package com.cinema.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -37,7 +36,7 @@ public class Seat {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    @PreUpdate
+     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }

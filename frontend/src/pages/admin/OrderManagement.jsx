@@ -64,7 +64,8 @@ const OrderManagement = () => {
                          order.ticketCode?.toLowerCase().includes(lowerSearchTerm) ||
                          order.customerName?.toLowerCase().includes(lowerSearchTerm) ||
                          order.movieTitle?.toLowerCase().includes(lowerSearchTerm));
-    const matchesStatus = statusFilter === "all" || order.status?.toLowerCase() === statusFilter.toLowerCase();
+    const matchesStatus = statusFilter === "all" || 
+                         (order.status?.toUpperCase() === statusFilter.toUpperCase());
     let matchesDate = true;
      if (order.orderDate) {
          try {
@@ -103,7 +104,7 @@ const OrderManagement = () => {
    };
 
    const OrderDetails = ({ order, onClose }) => {
-     const [newStatus, setNewStatus] = useState(order.status);
+     const [newStatus, setNewStatus] = useState(order.status?.toUpperCase() || order.status);
      const [isUpdating, setIsUpdating] = useState(false);
 
      const handleStatusUpdate = async () => {
@@ -247,13 +248,13 @@ const OrderManagement = () => {
                  <SelectItem value="REFUNDED">Đã hoàn tiền</SelectItem>
                </SelectContent>
              </Select>
-             <Button onClick={handleStatusUpdate} disabled={newStatus === order.status || isUpdating}>
+             <Button onClick={handleStatusUpdate} disabled={newStatus?.toUpperCase() === order.status?.toUpperCase() || isUpdating}>
                {isUpdating ? "Đang cập nhật..." : <><RefreshCw className="h-4 w-4 mr-2" /> Cập nhật</>}
              </Button>
            </div>
          </div>
 
-         {(order.status === "COMPLETED" || order.status === "PROCESSING") && (
+         {(order.status?.toUpperCase() === "COMPLETED" || order.status?.toUpperCase() === "PROCESSING") && (
            <div className="border-t pt-4">
              <Button variant="destructive" onClick={handleRefund} disabled={isUpdating}>
                <XCircle className="h-4 w-4 mr-2" />
@@ -272,9 +273,12 @@ const OrderManagement = () => {
    };
 
    const totalOrders = orders.length;
-   const completedOrders = orders.filter(o => o.status === 'COMPLETED').length;
-   const pendingOrders = orders.filter(o => o.status === 'PENDING' || o.status === 'PROCESSING').length;
-   const cancelledOrders = orders.filter(o => o.status === 'CANCELLED').length;
+   const completedOrders = orders.filter(o => o.status?.toUpperCase() === 'COMPLETED').length;
+   const pendingOrders = orders.filter(o => {
+     const status = o.status?.toUpperCase();
+     return status === 'PENDING' || status === 'PROCESSING';
+   }).length;
+   const cancelledOrders = orders.filter(o => o.status?.toUpperCase() === 'CANCELLED').length;
 
 
   return (

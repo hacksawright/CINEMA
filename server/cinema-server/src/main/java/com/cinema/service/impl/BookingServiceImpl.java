@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -78,12 +79,12 @@ public class BookingServiceImpl implements BookingService {
 
             Seat seat = seatRepository.findByRoomIdAndRowLabelAndSeatNumber(roomId, rowLabel, seatNumber)
                     .orElseThrow(() -> new IllegalArgumentException("Seat not found in room: " + seatIdString));
+            Optional<Ticket> existingTicketOpt = ticketRepository.findByShowtime_IdAndSeat_Id(showtime.getId(), seat.getId());
 
-            List<Ticket> existingTickets = ticketRepository.findByShowtimeIdAndSeatId(showtime.getId(), seat.getId());
             Ticket ticket;
 
-            if (!existingTickets.isEmpty()) {
-                ticket = existingTickets.get(0);
+            if (existingTicketOpt.isPresent()) {
+                ticket = existingTicketOpt.get();
                 if (!"AVAILABLE".equalsIgnoreCase(ticket.getStatus())) {
                     throw new IllegalStateException("Seat " + seatIdString + " is not available.");
                 }

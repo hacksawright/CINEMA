@@ -3,7 +3,6 @@ import { Plus, Search, Edit, Trash2, Calendar, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,7 +11,6 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
-import { cn } from "@/lib/utils";
 
 const ShowtimeManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,7 +19,6 @@ const ShowtimeManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedShowtime, setSelectedShowtime] = useState(null);
 
-  // State for dynamic data loaded from API
   const [movies, setMovies] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [showtimes, setShowtimes] = useState([]);
@@ -31,7 +28,6 @@ const ShowtimeManagement = () => {
       const res = await fetch("http://localhost:8080/api/showtimes");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      // API returns pageable response with `content` array
       const mapped = (data.content || []).map((s) => {
         let starts = s.startsAt ? parseISO(s.startsAt) : new Date();
         const movie = movies.find(m => String(m.id) === String(s.movieId));
@@ -39,16 +35,12 @@ const ShowtimeManagement = () => {
         return {
           id: s.id,
           movieId: s.movieId?.toString() ?? String(s.movieId),
-          // prefer local movies list title, then API field, then fallback
           movieTitle: movie?.title ?? s.movieTitle ?? `Phim #${s.movieId}`,
           roomId: s.roomId?.toString() ?? String(s.roomId),
           roomName: room?.name ?? s.roomName ?? `Phòng ${s.roomId}`,
           date: format(starts, "yyyy-MM-dd"),
           time: format(starts, "HH:mm"),
-          price: s.basePrice ?? s.price ?? 0,
-          // status is not provided by this API shape; leave undefined
-          ticketsSold: s.ticketsSold ?? 0,
-          totalTickets: s.totalTickets ?? 0
+          price: s.basePrice ?? s.price ?? 0
         };
       });
       setShowtimes(mapped);
@@ -57,7 +49,6 @@ const ShowtimeManagement = () => {
     }
   };
 
-  // On mount: fetch movies/rooms first so we can display titles, then fetch showtimes
   useEffect(() => {
     const init = async () => {
       try {
@@ -68,72 +59,30 @@ const ShowtimeManagement = () => {
         if (moviesRes.ok) {
           const moviesData = await moviesRes.json();
           const moviesList = moviesData.content || moviesData || [];
-          setMovies(moviesList.map(m => ({ ...m, id: m.id?.toString ? m.id.toString() : String(m.id) })));
+          setMovies(moviesList.map(m => ({ ...m, id: String(m.id) })));
         }
         if (roomsRes.ok) {
           const roomsData = await roomsRes.json();
           const roomsList = roomsData.content || roomsData || [];
-          setRooms(roomsList.map(r => ({ ...r, id: r.id?.toString ? r.id.toString() : String(r.id) })));
+          setRooms(roomsList.map(r => ({ ...r, id: String(r.id) })));
         }
       } catch (err) {
         console.warn('Failed to prefetch movies/rooms on mount:', err);
       } finally {
-        // fetch showtimes after attempting to load names
         await fetchShowtimes();
       }
     };
 
     init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filteredShowtimes = showtimes.filter(showtime => {
-    const matchesSearch = showtime.movieTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         showtime.roomName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      showtime.movieTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      showtime.roomName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDate = showtime.date === format(dateFilter, 'yyyy-MM-dd');
     return matchesSearch && matchesDate;
   });
-
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "active":
-        return <Badge className="bg-green-600">Hoạt động</Badge>;
-      case "cancelled":
-        return <Badge variant="destructive">Đã hủy</Badge>;
-      case "completed":
-        return <Badge variant="outline">Hoàn thành</Badge>;
-      default:
-        return <Badge variant="outline">—</Badge>;
-    }
-  };
-
-  // When opening the add dialog, fetch movies and rooms concurrently
-  useEffect(() => {
-    if (!isAddDialogOpen) return;
-
-    const fetchLists = async () => {
-      try {
-        const [moviesRes, roomsRes] = await Promise.all([
-          fetch('http://localhost:8080/api/movies'),
-          fetch('http://localhost:8080/api/rooms')
-        ]);
-        if (!moviesRes.ok || !roomsRes.ok) {
-          console.warn('Failed to fetch movies or rooms', moviesRes.status, roomsRes.status);
-          return;
-        }
-        const moviesData = await moviesRes.json();
-        const roomsData = await roomsRes.json();
-        const moviesList = moviesData.content || moviesData || [];
-        const roomsList = roomsData.content || roomsData || [];
-        setMovies(moviesList.map(m => ({ ...m, id: m.id?.toString ? m.id.toString() : String(m.id) })));
-        setRooms(roomsList.map(r => ({ ...r, id: r.id?.toString ? r.id.toString() : String(r.id) })));
-      } catch (err) {
-        console.error('Failed to fetch movies/rooms:', err);
-      }
-    };
-
-    fetchLists();
-  }, [isAddDialogOpen]);
 
   const ShowtimeForm = ({ showtime = null, onClose }) => {
     const [formData, setFormData] = useState({
@@ -142,30 +91,26 @@ const ShowtimeManagement = () => {
       date: showtime?.date || format(new Date(), 'yyyy-MM-dd'),
       time: showtime?.time || "",
       price: showtime?.price || 120000,
-      // status removed per request
     });
 
     const handleSubmit = (e) => {
       e.preventDefault();
       (async () => {
         try {
-          // Build payload matching ShowtimeDto expected by backend
           const movieIdNum = formData.movieId ? Number(formData.movieId) : null;
           const roomIdNum = formData.roomId ? Number(formData.roomId) : null;
           const startsAt = `${formData.date}T${formData.time}:00`;
 
-          // Try to compute endsAt using movie duration (minutes) when available
           let endsAt = null;
           const movie = movies.find(m => String(m.id) === String(formData.movieId));
           const durationMinutes = movie?.durationMinutes ?? movie?.duration ?? null;
           if (durationMinutes) {
-            // create a Date from local date/time
             const [h, min] = formData.time.split(":").map(Number);
             const startDate = new Date(formData.date);
             startDate.setHours(h, min, 0, 0);
             const endDate = new Date(startDate.getTime() + Number(durationMinutes) * 60000);
             const pad = (n) => String(n).padStart(2, '0');
-            endsAt = `${endDate.getFullYear()}-${pad(endDate.getMonth()+1)}-${pad(endDate.getDate())}T${pad(endDate.getHours())}:${pad(endDate.getMinutes())}:00`;
+            endsAt = `${endDate.getFullYear()}-${pad(endDate.getMonth() + 1)}-${pad(endDate.getDate())}T${pad(endDate.getHours())}:${pad(endDate.getMinutes())}:00`;
           }
 
           const payload = {
@@ -178,35 +123,24 @@ const ShowtimeManagement = () => {
 
           let res;
           if (showtime && showtime.id) {
-            // update existing
             res = await fetch(`http://localhost:8080/api/showtimes/${showtime.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
             });
-            if (!res.ok) {
-              const errText = await res.text();
-              throw new Error(`PUT ${res.status} ${errText}`);
-            }
           } else {
-            // create new
             res = await fetch('http://localhost:8080/api/showtimes', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
             });
-            if (!res.ok) {
-              const errText = await res.text();
-              throw new Error(`POST ${res.status} ${errText}`);
-            }
           }
 
-          // success: refresh showtimes and close
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
           await fetchShowtimes();
           onClose();
         } catch (err) {
           console.error('Failed to save showtime:', err);
-          // Optionally show UI feedback here
         }
       })();
     };
@@ -215,7 +149,7 @@ const ShowtimeManagement = () => {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="movie">Phim</Label>
+            <Label>Phim</Label>
             <Select value={formData.movieId} onValueChange={(value) => setFormData({ ...formData, movieId: value })}>
               <SelectTrigger>
                 <SelectValue placeholder="Chọn phim" />
@@ -223,14 +157,14 @@ const ShowtimeManagement = () => {
               <SelectContent>
                 {movies.map((movie) => (
                   <SelectItem key={movie.id} value={String(movie.id)}>
-                    {movie.title ?? movie.name ?? `Phim #${movie.id}`}{movie.duration ? ` (${movie.duration} phút)` : ''}
+                    {movie.title ?? movie.name ?? `Phim #${movie.id}`}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label htmlFor="room">Phòng chiếu</Label>
+            <Label>Phòng chiếu</Label>
             <Select value={formData.roomId} onValueChange={(value) => setFormData({ ...formData, roomId: value })}>
               <SelectTrigger>
                 <SelectValue placeholder="Chọn phòng" />
@@ -238,7 +172,7 @@ const ShowtimeManagement = () => {
               <SelectContent>
                 {rooms.map((room) => (
                   <SelectItem key={room.id} value={String(room.id)}>
-                    {room.name ?? room.roomName ?? `Phòng ${room.id}`}{room.capacity ? ` (${room.capacity} ghế)` : ''}
+                    {room.name ?? room.roomName ?? `Phòng ${room.id}`}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -248,9 +182,8 @@ const ShowtimeManagement = () => {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="date">Ngày chiếu</Label>
+            <Label>Ngày chiếu</Label>
             <Input
-              id="date"
               type="date"
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
@@ -258,9 +191,8 @@ const ShowtimeManagement = () => {
             />
           </div>
           <div>
-            <Label htmlFor="time">Giờ chiếu</Label>
+            <Label>Giờ chiếu</Label>
             <Input
-              id="time"
               type="time"
               value={formData.time}
               onChange={(e) => setFormData({ ...formData, time: e.target.value })}
@@ -269,26 +201,19 @@ const ShowtimeManagement = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="price">Giá vé</Label>
-            <Input
-              id="price"
-              type="number"
-              value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-              required
-            />
-          </div>
+        <div>
+          <Label>Giá vé</Label>
+          <Input
+            type="number"
+            value={formData.price}
+            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+            required
+          />
         </div>
 
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Hủy
-          </Button>
-          <Button type="submit">
-            {showtime ? "Cập nhật" : "Tạo suất chiếu"}
-          </Button>
+          <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
+          <Button type="submit">{showtime ? "Cập nhật" : "Tạo suất chiếu"}</Button>
         </div>
       </form>
     );
@@ -317,69 +242,20 @@ const ShowtimeManagement = () => {
         </Dialog>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Tổng suất chiếu</p>
-                <p className="text-2xl font-bold text-foreground">{showtimes.length}</p>
-              </div>
-              <Calendar className="h-8 w-8 text-muted-foreground" />
+      {/* Thống kê: chỉ giữ tổng suất chiếu */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Tổng suất chiếu</p>
+              <p className="text-2xl font-bold text-foreground">{showtimes.length}</p>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Đang hoạt động</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {showtimes.filter(s => s.status === 'active').length}
-                </p>
-              </div>
-              <div className="h-8 w-8 bg-green-600/10 rounded-full flex items-center justify-center">
-                <span className="text-green-600 text-sm font-bold">✓</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Đã hủy</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {showtimes.filter(s => s.status === 'cancelled').length}
-                </p>
-              </div>
-              <div className="h-8 w-8 bg-red-600/10 rounded-full flex items-center justify-center">
-                <span className="text-red-600 text-sm font-bold">✗</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Tỷ lệ lấp đầy</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {Math.round(
-                    showtimes.reduce((acc, s) => acc + (s.ticketsSold / s.totalTickets), 0) / showtimes.length * 100
-                  )}%
-                </p>
-              </div>
-              <div className="h-8 w-8 bg-blue-600/10 rounded-full flex items-center justify-center">
-                <span className="text-blue-600 text-sm font-bold">%</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            <Calendar className="h-8 w-8 text-muted-foreground" />
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Filters */}
+      {/* Bộ lọc */}
       <Card>
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -416,7 +292,7 @@ const ShowtimeManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Showtimes table */}
+      {/* Bảng lịch chiếu — bỏ vé đã bán + trạng thái */}
       <Card>
         <CardHeader>
           <CardTitle>Lịch chiếu ngày {format(dateFilter, 'dd/MM/yyyy', { locale: vi })} ({filteredShowtimes.length})</CardTitle>
@@ -429,8 +305,6 @@ const ShowtimeManagement = () => {
                 <TableHead>Phòng</TableHead>
                 <TableHead>Giờ chiếu</TableHead>
                 <TableHead>Giá vé</TableHead>
-                <TableHead>Vé đã bán</TableHead>
-                <TableHead>Trạng thái</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
@@ -446,18 +320,6 @@ const ShowtimeManagement = () => {
                     </div>
                   </TableCell>
                   <TableCell>{showtime.price.toLocaleString('vi-VN')} ₫</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span>{showtime.ticketsSold}/{showtime.totalTickets}</span>
-                      <div className="w-16 bg-muted rounded-full h-2">
-                        <div 
-                          className="bg-primary h-2 rounded-full" 
-                          style={{ width: `${(showtime.ticketsSold / showtime.totalTickets) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(showtime.status)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Button
@@ -480,10 +342,7 @@ const ShowtimeManagement = () => {
                             const res = await fetch(`http://localhost:8080/api/showtimes/${showtime.id}`, {
                               method: 'DELETE'
                             });
-                            if (!res.ok) {
-                              const txt = await res.text();
-                              throw new Error(`${res.status} ${txt}`);
-                            }
+                            if (!res.ok) throw new Error(`${res.status}`);
                             await fetchShowtimes();
                           } catch (err) {
                             console.error('Failed to delete showtime:', err);
@@ -501,7 +360,7 @@ const ShowtimeManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Edit dialog */}
+      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
