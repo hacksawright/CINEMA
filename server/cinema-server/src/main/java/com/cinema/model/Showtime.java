@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore; 
 
 @Entity
 @Table(name = "showtimes")
@@ -18,8 +19,10 @@ public class Showtime {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "movie_id", nullable = false)
+    @JsonIgnore 
     private Movie movie; 
 
     @ManyToOne(fetch = FetchType.LAZY)

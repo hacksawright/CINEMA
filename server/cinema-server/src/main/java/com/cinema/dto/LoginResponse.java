@@ -2,4 +2,4 @@
 
 package com.cinema.dto;
 
-public record LoginResponse(String token, Long userId) {}
+public record LoginResponse(String token, Long userId , String fullName) {}

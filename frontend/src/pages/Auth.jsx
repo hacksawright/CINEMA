@@ -17,7 +17,7 @@ export default function Auth() {
 
 
   useEffect(() => {
-    const token = localStorage.getItem('jwtToken');
+    const token = sessionStorage.getItem('jwtToken');
     if (token) {
       navigate("/", { replace: true }); 
     }
@@ -43,8 +43,9 @@ export default function Auth() {
       
       if (response.ok) {
     
-        localStorage.setItem('jwtToken', data.token);
-        localStorage.setItem('userId', data.userId); 
+        sessionStorage.setItem('jwtToken', data.token);
+        sessionStorage.setItem('userId', data.userId);
+        sessionStorage.setItem('fullName', data.fullName); 
 
         toast({ title: "Thành công!", description: "Đăng nhập thành công!" });
         

@@ -52,6 +52,6 @@ public class AuthService {
         String jwt = tokenProvider.generateToken(user.getEmail(), user.getId());
 
         // Trả về Token và ID dưới dạng Record
-        return new LoginResponse(jwt, user.getId());
+        return new LoginResponse(jwt, user.getId(), user.getFullName());
     }
 }

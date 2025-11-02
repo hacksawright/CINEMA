@@ -128,7 +128,18 @@ public class MovieServiceImpl implements MovieService {
         Movie movie = movieRepository.findById(id)
                 .orElseThrow(() -> new MovieNotFoundException(id));
         
-        return MovieResponse.fromEntity(movie);
+        // Force load showtimes to avoid lazy loading issues
+        if (movie.getShowtimes() != null) {
+            int showtimeCount = movie.getShowtimes().size();
+            logger.debug("Phim ID {} có {} suất chiếu", id, showtimeCount);
+        } else {
+            logger.warn("Phim ID {} không có showtimes (null)", id);
+        }
+
+        MovieResponse response = MovieResponse.fromEntity(movie);
+        logger.debug("MovieResponse cho phim {} có {} showtimes", 
+                    id, response.getShowtimes() != null ? response.getShowtimes().size() : 0);
+        return response;
     }
 
     @Override

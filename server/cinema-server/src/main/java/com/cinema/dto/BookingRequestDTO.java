@@ -14,4 +14,9 @@ public class BookingRequestDTO {
     private List<String> selectedSeats;
     @NotBlank
     private String paymentMethod;
+    private List<Long> seatIds;
+     private Long userId;
+    public List<Long> getSeatIds() {
+         return seatIds;
+    }
 }

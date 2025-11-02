@@ -1,11 +1,13 @@
 package com.cinema.controller;
 
 import com.cinema.dto.ShowtimeDto;
+import com.cinema.dto.ShowtimeDetailResponse; // Cần import DTO này
 import com.cinema.service.ShowtimeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity; // Cần import cho ResponseEntity
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -16,6 +18,14 @@ public class ShowtimeController {
 
     @Autowired
     private ShowtimeService showtimeService;
+
+    @GetMapping("/{showtimeId}/details")
+    public ResponseEntity<ShowtimeDetailResponse> getShowtimeDetails(@PathVariable Long showtimeId) {
+        // Phương thức này gọi logic phức tạp bạn đã viết trong ShowtimeServiceImpl
+        ShowtimeDetailResponse response = showtimeService.getShowtimeDetails(showtimeId);
+        return ResponseEntity.ok(response);
+    }
+
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

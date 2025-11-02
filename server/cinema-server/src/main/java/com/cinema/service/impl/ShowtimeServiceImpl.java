@@ -1,13 +1,19 @@
 package com.cinema.service.impl;
 
 import com.cinema.dto.ShowtimeDto;
+import com.cinema.dto.ShowtimeDetailResponse;
+import com.cinema.dto.SeatResponse; 
 import com.cinema.exception.NotFoundException;
 import com.cinema.model.Movie;
 import com.cinema.model.Room;
+import com.cinema.model.Seat;
 import com.cinema.model.Showtime;
+import com.cinema.model.Ticket;
 import com.cinema.repository.MovieRepository;
 import com.cinema.repository.RoomRepository;
 import com.cinema.repository.ShowtimeRepository;
+import com.cinema.repository.SeatRepository; 
+import com.cinema.repository.TicketRepository; 
 import com.cinema.service.ShowtimeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -16,40 +22,48 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class ShowtimeServiceImpl implements ShowtimeService {
 
+    // Inject Repositories
     @Autowired
     private ShowtimeRepository showtimeRepository;
-
     @Autowired
     private MovieRepository movieRepository;
-
     @Autowired
     private RoomRepository roomRepository;
+    @Autowired
+    private SeatRepository seatRepository; 
+    @Autowired
+    private TicketRepository ticketRepository; 
+
+    // Các trạng thái vé được coi là đã bị chiếm
+    private static final List<String> BOOKED_STATUSES = List.of("BOOKED", "SOLD", "PROCESSING");
 
     @Override
     public ShowtimeDto create(ShowtimeDto dto) {
         Movie movie = movieRepository.findById(dto.getMovieId())
-                .orElseThrow(() -> new NotFoundException("Movie not found: " + dto.getMovieId()));
+            .orElseThrow(() -> new NotFoundException("Movie not found: " + dto.getMovieId()));
         Room room = roomRepository.findById(dto.getRoomId())
-                .orElseThrow(() -> new NotFoundException("Room not found: " + dto.getRoomId()));
+            .orElseThrow(() -> new NotFoundException("Room not found: " + dto.getRoomId()));
 
         Showtime s = Showtime.builder()
-                .movie(movie)
-                .room(room)
-                .startsAt(dto.getStartsAt())
-                .endsAt(dto.getEndsAt())
-                .basePrice(dto.getBasePrice())
-                .build();
+            .movie(movie)
+            .room(room)
+            .startsAt(dto.getStartsAt())
+            .endsAt(dto.getEndsAt())
+            .basePrice(dto.getBasePrice())
+            .build();
 
         s = showtimeRepository.save(s);
         return toDto(s);
     }
-
+    
     @Override
     public ShowtimeDto update(Long id, ShowtimeDto dto) {
         Showtime s = showtimeRepository.findById(id).orElseThrow(() -> new NotFoundException("Showtime not found: " + id));
@@ -88,15 +102,71 @@ public class ShowtimeServiceImpl implements ShowtimeService {
         if (!showtimeRepository.existsById(id)) throw new NotFoundException("Showtime not found: " + id);
         showtimeRepository.deleteById(id);
     }
+    
+    @Override
+    @Transactional(readOnly = true)
+public ShowtimeDetailResponse getShowtimeDetails(Long showtimeId) {
+    // 1. Lấy thông tin suất chiếu và phòng chiếu
+    Showtime showtime = showtimeRepository.findById(showtimeId)
+        .orElseThrow(() -> new NotFoundException("Suất chiếu không tồn tại: " + showtimeId));
+    Room room = showtime.getRoom();
 
+    // 2. Lấy tất cả ghế trong phòng
+    List<Seat> allSeats = seatRepository.findByRoomId(room.getId());
+
+    // 3. Lấy danh sách vé đã đặt
+    Set<Ticket> bookedTickets = ticketRepository.findByShowtime_IdAndStatusIn(showtimeId, BOOKED_STATUSES);
+
+    // 4. Lấy mã ghế đã đặt (ví dụ: A1, B5)
+    Set<String> bookedSeatCodes = bookedTickets.stream()
+        .map(ticket -> ticket.getSeat().getRowLabel() + ticket.getSeat().getSeatNumber())
+        .collect(Collectors.toSet());
+
+    // 5. Ánh xạ tất cả ghế sang DTO và đánh dấu trạng thái
+    Set<SeatResponse> seatResponses = allSeats.stream()
+        .map(seat -> toSeatResponse(seat, bookedSeatCodes))
+        .collect(Collectors.toSet());
+
+    // 6. Trả về DTO tổng hợp
+    return toShowtimeDetailResponse(showtime, room, seatResponses, bookedSeatCodes);
+}
+    
     private ShowtimeDto toDto(Showtime s) {
         return ShowtimeDto.builder()
-                .id(s.getId())
-                .movieId(s.getMovie() != null ? s.getMovie().getId() : null)
-                .roomId(s.getRoom() != null ? s.getRoom().getId() : null)
-                .startsAt(s.getStartsAt())
-                .endsAt(s.getEndsAt())
-                .basePrice(s.getBasePrice())
-                .build();
+            .id(s.getId())
+            .movieId(s.getMovie() != null ? s.getMovie().getId() : null)
+            .roomId(s.getRoom() != null ? s.getRoom().getId() : null)
+            .startsAt(s.getStartsAt())
+            .endsAt(s.getEndsAt())
+            .basePrice(s.getBasePrice())
+            .build();
     }
+    
+    private SeatResponse toSeatResponse(Seat seat, Set<String> bookedSeatCodes) {
+        return new SeatResponse(
+            seat.getId(), 
+            seat.getRowLabel(), 
+            seat.getSeatNumber(), 
+            seat.getType()
+        );
+    }
+
+ 
+    private ShowtimeDetailResponse toShowtimeDetailResponse(
+    Showtime showtime, Room room, Set<SeatResponse> allSeats, Set<String> bookedSeatCodes) {
+    
+    return new ShowtimeDetailResponse(
+        showtime.getId(),
+        showtime.getMovie().getTitle(),
+        showtime.getStartsAt(),
+        room.getId(),
+        room.getName(),
+        room.getTotalRows(),
+        room.getSeatsPerRow(),
+        showtime.getBasePrice(),
+        allSeats,
+        bookedSeatCodes  // ✅ truyền đúng kiểu
+    );
+}
+
 }
