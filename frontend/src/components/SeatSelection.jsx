@@ -1,24 +1,37 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-export const SeatSelection = ({ totalRows, seatsPerRow, bookedSeats = [], onSeatsChange }) => {
-  const [selectedSeats, setSelectedSeats] = useState([]);
+export const SeatSelection = ({
+  totalRows,
+  seatsPerRow,
+  bookedSeats = [],
+  selectedSeats: parentSelectedSeats = [], // ✅ nhận từ Booking.jsx
+  onSeatsChange
+}) => {
+  const [selectedSeats, setSelectedSeats] = useState(parentSelectedSeats);
+
+  // ✅ Đồng bộ lại khi Booking.jsx reset hoặc thay đổi danh sách ghế
+  useEffect(() => {
+    setSelectedSeats(parentSelectedSeats);
+  }, [parentSelectedSeats]);
 
   // Validate và sử dụng giá trị mặc định nếu không có
   const validTotalRows = totalRows && totalRows > 0 ? totalRows : 10;
   const validSeatsPerRow = seatsPerRow && seatsPerRow > 0 ? seatsPerRow : 12;
 
-  const rows = Array.from({ length: validTotalRows }, (_, i) => String.fromCharCode(65 + i));
+  const rows = Array.from({ length: validTotalRows }, (_, i) =>
+    String.fromCharCode(65 + i)
+  );
   const seats = Array.from({ length: validSeatsPerRow }, (_, i) => i + 1);
 
   const toggleSeat = (seatId) => {
     if (bookedSeats.includes(seatId)) return;
 
     const newSeats = selectedSeats.includes(seatId)
-      ? selectedSeats.filter(s => s !== seatId)
+      ? selectedSeats.filter((s) => s !== seatId)
       : [...selectedSeats, seatId];
-    
+
     setSelectedSeats(newSeats);
     onSeatsChange(newSeats);
   };
@@ -40,44 +53,44 @@ export const SeatSelection = ({ totalRows, seatsPerRow, bookedSeats = [], onSeat
 
         {/* SEAT GRID */}
         <div className="space-y-2">
-          {rows.map(row => (
+          {rows.map((row) => (
             <div key={row} className="flex items-center justify-center gap-2">
               <span className="w-6 text-sm text-muted-foreground font-medium">{row}</span>
               <div className="flex gap-2">
-                {seats.map(seat => {
+                {seats.map((seat) => {
                   const seatId = `${row}${seat}`;
                   const status = getSeatStatus(seatId);
-                  
+
                   return (
-                   <button
-  key={seatId}
-  onClick={() => toggleSeat(seatId)}
-  disabled={status === "booked"}
-  className={cn(
-    "w-8 h-8 rounded-t-full text-xs font-medium transition-all duration-200 flex items-center justify-center",
-    status === "available" && "hover:scale-110",
-    status === "selected" && "scale-110 shadow-lg",
-    status === "booked" && "opacity-70 cursor-not-allowed"
-  )}
-  style={{
-    backgroundColor:
-      status === "available"
-        ? "#2B2F38"
-        : status === "selected"
-        ? "#F74C56"
-        : "#3B1F23",
-    color: "#fff",
-    background: `${
-      status === "available"
-        ? "#2B2F38"
-        : status === "selected"
-        ? "#F74C56"
-        : "#3B1F23"
-    } !important`,
-  }}
->
-  {seat}
-</button>
+                    <button
+                      key={seatId}
+                      onClick={() => toggleSeat(seatId)}
+                      disabled={status === "booked"}
+                      className={cn(
+                        "w-8 h-8 rounded-t-full text-xs font-medium transition-all duration-200 flex items-center justify-center",
+                        status === "available" && "hover:scale-110",
+                        status === "selected" && "scale-110 shadow-lg",
+                        status === "booked" && "opacity-70 cursor-not-allowed"
+                      )}
+                      style={{
+                        backgroundColor:
+                          status === "available"
+                            ? "#2B2F38"
+                            : status === "selected"
+                            ? "#F74C56"
+                            : "#3B1F23",
+                        color: "#fff",
+                        background: `${
+                          status === "available"
+                            ? "#2B2F38"
+                            : status === "selected"
+                            ? "#F74C56"
+                            : "#3B1F23"
+                        } !important`,
+                      }}
+                    >
+                      {seat}
+                    </button>
                   );
                 })}
               </div>
@@ -107,8 +120,10 @@ export const SeatSelection = ({ totalRows, seatsPerRow, bookedSeats = [], onSeat
         <div className="bg-card border border-border rounded-lg p-4">
           <p className="text-sm font-medium mb-2">Selected Seats:</p>
           <div className="flex flex-wrap gap-2">
-            {selectedSeats.map(seat => (
-              <Badge key={seat} variant="secondary">{seat}</Badge>
+            {selectedSeats.map((seat) => (
+              <Badge key={seat} variant="secondary">
+                {seat}
+              </Badge>
             ))}
           </div>
         </div>

@@ -41,16 +41,16 @@ const MOVIE_RATING = {
 };
 
 const MOVIE_GENRE = {
-  ACTION: 'Action',
-  COMEDY: 'Comedy',
-  DRAMA: 'Drama',
-  HORROR: 'Horror',
-  ROMANCE: 'Romance',
-  SCIFI: 'Sci-Fi',
-  THRILLER: 'Thriller',
-  ADVENTURE: 'Adventure',
-  ANIMATION: 'Animation',
-  DOCUMENTARY: 'Documentary'
+  ACTION: 'Hành Động',
+  COMEDY: 'Hài',
+  DRAMA: 'Tâm Lý',
+  HORROR: 'Kinh Dị',
+  ROMANCE: 'Lãng Mạn',
+  SCIFI: 'Khoa Học Viễn Tưởng',
+  THRILLER: 'Giật Gân',
+  ADVENTURE: 'Phiêu Lưu',
+  ANIMATION: 'Hoạt Hình',
+  DOCUMENTARY: 'Tài Liệu'
 };
 
 const MovieManagement = () => {
@@ -60,7 +60,7 @@ const MovieManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize] = useState(10);
+  const [pageSize] = useState(10000);
 
   // API hooks
   const { 
@@ -87,7 +87,11 @@ const MovieManagement = () => {
   const updateStatusMutation = useUpdateMovieStatus();
 
   // Determine which data to display
-  const displayMovies = searchTerm ? searchResults : moviesData?.content || moviesData;
+  let displayMovies = searchTerm ? searchResults : moviesData?.content || moviesData;
+  // Áp dụng lọc trạng thái (chỉ nếu không phải "all")
+  if (statusFilter && statusFilter !== "all") {
+    displayMovies = displayMovies?.filter(movie => movie.status === statusFilter) || [];
+  }
   const isLoading = searchTerm ? searchLoading : moviesLoading;
 
   const getStatusBadge = (status) => {
@@ -135,6 +139,7 @@ const MovieManagement = () => {
           await createMovieMutation.mutateAsync(movieData);
           toast.success("Thêm phim mới thành công!");
         }
+        refetchMovies();
         onClose();
       } catch (error) {
         toast.error(`Lỗi: ${error.message}`);

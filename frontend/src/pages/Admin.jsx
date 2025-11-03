@@ -83,7 +83,7 @@ const AdminLayout = () => {
       toast({ title: "Lỗi", description: "Không thể đăng xuất", variant: "destructive" });
     } else {
       toast({ title: "Đăng xuất thành công" });
-      window.location.href = "/auth";
+      window.location.href = "/admin/login";
     }
   };
 

@@ -28,7 +28,7 @@ export default function AdminLogin() {
           title: "Đăng nhập thành công 🎉",
           description: "Chào mừng bạn quay lại trang quản trị.",
         });
-        setTimeout(() => (window.location.href = "/admin/dashboard"), 800);
+        setTimeout(() => (window.location.href = "/admin"), 800);
       } else {
         toast({
           title: "Sai thông tin đăng nhập",

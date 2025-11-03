@@ -216,7 +216,7 @@ await fetchShowtimeDetails();
 return (
   <Layout>
     <div className="px-4 py-12 max-w-7xl mx-auto"> 
-      <h1 className="text-3xl font-bold mb-8">Book Your Seats</h1>
+      <h1 className="text-3xl font-bold mb-8">ĐẶT VÉ</h1>
 
       <div className="grid lg:grid-cols-[1fr_400px] gap-8">
         {/* Cột trái: chọn ghế */}
@@ -237,6 +237,7 @@ return (
               totalRows={showtime.theater.total_rows}
               seatsPerRow={showtime.theater.seats_per_row}
               bookedSeats={bookedSeatCodes}
+              selectedSeats={selectedSeats}
               onSeatsChange={setSelectedSeats}
             />
           ) : (
@@ -254,40 +255,40 @@ return (
         <div className="flex justify-center items-center lg:sticky lg:top-24 h-fit">
           <Card className="border-border w-full max-w-sm">
             <CardHeader>
-              <CardTitle>Booking Summary</CardTitle>
+              <CardTitle>Tổng quan</CardTitle>
             </CardHeader>
 
             <CardContent className="space-y-6">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Selected Seats</p>
+                <p className="text-sm text-muted-foreground mb-1">Ghế đã chọn</p>
                 <p className="font-semibold">
-                  {selectedSeats.length > 0 ? selectedSeats.join(", ") : "None"}
+                  {selectedSeats.length > 0 ? selectedSeats.join(", ") : "Trống"}
                 </p>
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Price per seat</p>
+                <p className="text-sm text-muted-foreground mb-1">Giá vé</p>
                 <p className="font-semibold">{formatVND(showtime?.price)}</p>
               </div>
 
               <div className="border-t border-border pt-4">
-                <p className="text-sm text-muted-foreground mb-1">Total Amount</p>
+                <p className="text-sm text-muted-foreground mb-1">Tổng thanh toán</p>
                 <p className="text-2xl font-bold text-primary">{formatVND(totalAmount)}</p>
               </div>
 
               <div>
-                <Label className="text-base mb-3 block">Payment Method</Label>
+                <Label className="text-base mb-3 block">Hình thức thanh toán</Label>
                 <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
                   <div className="flex items-center space-x-2 mb-2">
                     <RadioGroupItem value="cash" id="cash" />
                     <Label htmlFor="cash" className="cursor-pointer">
-                      Cash (Pay at counter)
+                      Tiền mặt
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="bank_transfer" id="bank" />
                     <Label htmlFor="bank" className="cursor-pointer">
-                      Bank Transfer
+                      Chuyển khoản
                     </Label>
                   </div>
                 </RadioGroup>
@@ -299,7 +300,7 @@ return (
                 className="w-full"
                 size="lg"
               >
-                {submitting ? "Processing..." : "Confirm Booking"}
+                {submitting ? "Processing..." : "Xác nhận"}
               </Button>
             </CardContent>
           </Card>
