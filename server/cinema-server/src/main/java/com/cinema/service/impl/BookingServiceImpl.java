@@ -92,7 +92,10 @@ public class BookingServiceImpl implements BookingService {
                 ticket = new Ticket();
                 ticket.setShowtime(showtime);
                 ticket.setSeat(seat);
-                ticket.setPrice(showtime.getBasePrice());
+
+                // ✅ Tính giá theo loại ghế
+                BigDecimal ticketPrice = calculateTicketPrice(showtime.getBasePrice(), seat.getType());
+                ticket.setPrice(ticketPrice);
                 ticket.setStatus("AVAILABLE");
             }
 
@@ -135,5 +138,26 @@ public class BookingServiceImpl implements BookingService {
                 .seats(request.getSelectedSeats())
                 .totalAmount(savedOrder.getTotalAmount())
                 .build();
+    }
+
+    /**
+     * Tính giá vé theo loại ghế
+     * - STANDARD: 1.0x basePrice
+     * - VIP: 1.25x basePrice
+     * - COUPLE: 2.0x basePrice (ghế đôi cho 2 người)
+     * - DISABLED: 0 (không bán)
+     */
+    private BigDecimal calculateTicketPrice(BigDecimal basePrice, String seatType) {
+        if (seatType == null) {
+            return basePrice;
+        }
+
+        return switch (seatType.toUpperCase()) {
+            case "VIP" -> basePrice.multiply(new BigDecimal("1.25"));
+            case "COUPLE" -> basePrice.multiply(new BigDecimal("2.0"));
+            case "STANDARD" -> basePrice;
+            case "DISABLED" -> BigDecimal.ZERO;
+            default -> basePrice;
+        };
     }
 }

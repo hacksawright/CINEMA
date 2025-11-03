@@ -92,34 +92,40 @@ public class RoomService_duc {
 
     @Transactional
 public RoomLayoutDTO updateRoomLayout(Long roomId, RoomLayoutDTO layoutDTO) {
-    Room room = roomRepository.findById(roomId) // Fetch the room first
+    Room room = roomRepository.findById(roomId)
             .orElseThrow(() -> new ResourceNotFoundException("Room", "id", roomId));
 
     if (!room.getTotalRows().equals(layoutDTO.getTotalRows()) || !room.getSeatsPerRow().equals(layoutDTO.getSeatsPerRow())) {
         throw new IllegalArgumentException("Cannot change room dimensions via layout update. Use the room update endpoint (/api/admin/rooms/{roomId}).");
     }
 
-    seatRepository.deleteByRoomId(roomId);
-    roomRepository.flush(); 
-    if (room.getSeats() != null) {
-         room.getSeats().clear();
-    } else {
-        room.setSeats(new ArrayList<>()); 
+    // Lấy danh sách ghế hiện tại
+    List<Seat> existingSeats = seatRepository.findByRoomId(roomId);
+
+    // Cập nhật type của từng ghế thay vì xóa và tạo mới
+    for (SeatDTO seatDTO : layoutDTO.getSeats()) {
+        // Tìm ghế tương ứng trong database
+        Seat existingSeat = existingSeats.stream()
+                .filter(s -> s.getRowLabel().equals(seatDTO.getRowLabel())
+                          && s.getSeatNumber().equals(seatDTO.getSeatNumber()))
+                .findFirst()
+                .orElse(null);
+
+        if (existingSeat != null) {
+            // Cập nhật type của ghế hiện có
+            existingSeat.setType(seatDTO.getType());
+        } else {
+            // Nếu ghế chưa tồn tại (trường hợp hiếm), tạo mới
+            Seat newSeat = mapToSeatEntity(seatDTO, room);
+            existingSeats.add(newSeat);
+            room.getSeats().add(newSeat);
+        }
     }
-    
 
-    
-    List<Seat> newSeats = layoutDTO.getSeats().stream()
-            .map(seatDTO -> mapToSeatEntity(seatDTO, room)) 
-            .collect(Collectors.toList());
+    // Lưu room (cascade sẽ tự động lưu seats)
+    Room savedRoom = roomRepository.save(room);
 
-   
-    room.getSeats().addAll(newSeats);
-
-   
-    Room savedRoom = roomRepository.save(room); 
-
-   
+    // Trả về layout đã cập nhật
     layoutDTO.setRoomId(savedRoom.getId());
     layoutDTO.setRoomName(savedRoom.getName());
     layoutDTO.setSeats(savedRoom.getSeats().stream().map(this::mapToSeatDTO).collect(Collectors.toList()));

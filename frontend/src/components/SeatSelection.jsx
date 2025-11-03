@@ -7,7 +7,8 @@ export const SeatSelection = ({
   seatsPerRow,
   bookedSeats = [],
   selectedSeats: parentSelectedSeats = [], // ✅ nhận từ Booking.jsx
-  onSeatsChange
+  onSeatsChange,
+  allSeats = [] // ✅ Nhận thông tin tất cả ghế với type
 }) => {
   const [selectedSeats, setSelectedSeats] = useState(parentSelectedSeats);
 
@@ -25,8 +26,20 @@ export const SeatSelection = ({
   );
   const seats = Array.from({ length: validSeatsPerRow }, (_, i) => i + 1);
 
+  // ✅ Hàm lấy thông tin ghế từ allSeats
+  const getSeatInfo = (seatId) => {
+    const rowLabel = seatId.charAt(0);
+    const seatNumber = parseInt(seatId.substring(1));
+    return allSeats.find(
+      seat => seat.rowLabel === rowLabel && seat.seatNumber === seatNumber
+    );
+  };
+
   const toggleSeat = (seatId) => {
-    if (bookedSeats.includes(seatId)) return;
+    const seatInfo = getSeatInfo(seatId);
+
+    // Không cho phép chọn ghế đã đặt hoặc ghế hỏng
+    if (bookedSeats.includes(seatId) || seatInfo?.type === 'DISABLED') return;
 
     const newSeats = selectedSeats.includes(seatId)
       ? selectedSeats.filter((s) => s !== seatId)
@@ -37,9 +50,31 @@ export const SeatSelection = ({
   };
 
   const getSeatStatus = (seatId) => {
+    const seatInfo = getSeatInfo(seatId);
+    if (seatInfo?.type === 'DISABLED') return "disabled";
     if (bookedSeats.includes(seatId)) return "booked";
     if (selectedSeats.includes(seatId)) return "selected";
     return "available";
+  };
+
+  // ✅ Hàm lấy màu sắc theo loại ghế
+  const getSeatColor = (seatId, status) => {
+    const seatInfo = getSeatInfo(seatId);
+
+    if (status === "disabled") return "#1a1a1a"; // Ghế hỏng - màu đen
+    if (status === "booked") return "#3B1F23"; // Ghế đã đặt - màu đỏ đậm
+    if (status === "selected") return "#F74C56"; // Ghế đang chọn - màu đỏ
+
+    // Ghế available - màu theo type
+    switch (seatInfo?.type) {
+      case 'VIP':
+        return "#FFD700"; // Vàng gold cho VIP
+      case 'COUPLE':
+        return "#FF69B4"; // Hồng cho ghế đôi
+      case 'STANDARD':
+      default:
+        return "#2B2F38"; // Xám cho ghế thường
+    }
   };
 
   return (
@@ -65,28 +100,16 @@ export const SeatSelection = ({
                     <button
                       key={seatId}
                       onClick={() => toggleSeat(seatId)}
-                      disabled={status === "booked"}
+                      disabled={status === "booked" || status === "disabled"}
                       className={cn(
                         "w-8 h-8 rounded-t-full text-xs font-medium transition-all duration-200 flex items-center justify-center",
                         status === "available" && "hover:scale-110",
                         status === "selected" && "scale-110 shadow-lg",
-                        status === "booked" && "opacity-70 cursor-not-allowed"
+                        (status === "booked" || status === "disabled") && "opacity-70 cursor-not-allowed"
                       )}
                       style={{
-                        backgroundColor:
-                          status === "available"
-                            ? "#2B2F38"
-                            : status === "selected"
-                            ? "#F74C56"
-                            : "#3B1F23",
+                        backgroundColor: getSeatColor(seatId, status),
                         color: "#fff",
-                        background: `${
-                          status === "available"
-                            ? "#2B2F38"
-                            : status === "selected"
-                            ? "#F74C56"
-                            : "#3B1F23"
-                        } !important`,
                       }}
                     >
                       {seat}
@@ -100,10 +123,18 @@ export const SeatSelection = ({
       </div>
 
       {/* LEGEND */}
-      <div className="flex items-center justify-center gap-6 text-sm">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-t-full bg-[#2B2F38]" />
-          <span className="text-muted-foreground">Available</span>
+          <span className="text-muted-foreground">Standard</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-t-full" style={{ backgroundColor: "#FFD700" }} />
+          <span className="text-muted-foreground">VIP</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-t-full" style={{ backgroundColor: "#FF69B4" }} />
+          <span className="text-muted-foreground">Couple</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-t-full bg-[#F74C56]" />
@@ -112,6 +143,10 @@ export const SeatSelection = ({
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-t-full bg-[#3B1F23]" />
           <span className="text-muted-foreground">Booked</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-t-full bg-[#1a1a1a]" />
+          <span className="text-muted-foreground">Disabled</span>
         </div>
       </div>
 

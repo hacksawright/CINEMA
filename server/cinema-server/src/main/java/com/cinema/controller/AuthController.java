@@ -7,6 +7,9 @@ import com.cinema.dto.RegistrationRequest;
 import com.cinema.dto.LoginResponse;
 import com.cinema.service.AuthService;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,15 +42,18 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
-            // Gọi hàm login để xác thực và nhận JWT Token + UserId
-            LoginResponse response = authService.login(loginRequest); 
-            
-            // Nếu không có lỗi, trả về HTTP 200 OK và đối tượng LoginResponse (JSON)
+            LoginResponse response = authService.login(loginRequest);
             return ResponseEntity.ok(response);
-            
+
         } catch (RuntimeException e) {
-            // Nếu AuthService.login() ném ra RuntimeException (lỗi email/mật khẩu), trả về 401
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+            // TRẢ VỀ JSON, KHÔNG PHẢI STRING
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", e.getMessage());
+
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(error); // ← Bây giờ là JSON
         }
     }
 }

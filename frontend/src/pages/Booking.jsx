@@ -9,14 +9,14 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns"; 
+import { format } from "date-fns";
 
 // Hàm helper để định dạng tiền tệ sang VND
 const formatVND = (amount) => {
     if (amount === null || amount === undefined || isNaN(amount)) return 'N/A VND';
     // Sử dụng Intl.NumberFormat cho định dạng tiền tệ chuẩn Việt Nam
-    return new Intl.NumberFormat('vi-VN', { 
-        style: 'currency', 
+    return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
         currency: 'VND',
         minimumFractionDigits: 0
     }).format(amount);
@@ -28,20 +28,21 @@ export default function Booking() {
   const { showtimeId } = useParams();
   const navigate = useNavigate();
   console.log("📍 showtimeId từ URL:", showtimeId);
-  
+
   const [showtime, setShowtime] = useState(null);
   const [bookedSeatCodes, setBookedSeatCodes] = useState([]); // Chứa mã ghế đã đặt (vd: ["A1", "A2"])
+  const [allSeats, setAllSeats] = useState([]); // Chứa thông tin tất cả ghế với type
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => { 
+  useEffect(() => {
     console.log("🔍 useEffect chạy, showtimeId:", showtimeId);
-    if (showtimeId) { 
+    if (showtimeId) {
         console.log("✅ showtimeId hợp lệ, bắt đầu fetch");
-        fetchShowtimeDetails(); 
+        fetchShowtimeDetails();
     } else {
         console.warn("⚠️ showtimeId không tồn tại");
         setLoading(false);
@@ -53,10 +54,10 @@ export default function Booking() {
         const apiUrl = `/showtimes/${showtimeId}/details`;
         console.log("🔄 Đang tải thông tin showtime ID:", showtimeId);
         console.log("🌐 API URL:", apiUrl);
-        
+
         const response = await api.get(apiUrl);
         const data = response.data; // Dữ liệu từ ShowtimeDetailResponse DTO
-        
+
         console.log("🎬 API trả về:", data);
         console.log("📊 Dữ liệu chi tiết:", {
             showtimeId: data.showtimeId,
@@ -65,7 +66,8 @@ export default function Booking() {
             basePrice: data.basePrice,
             totalRows: data.totalRows,
             seatsPerRow: data.seatsPerRow,
-            bookedSeatCodes: data.bookedSeatCodes
+            bookedSeatCodes: data.bookedSeatCodes,
+            allSeats: data.allSeats // Thông tin tất cả ghế với type
         });
 
         // Validate dữ liệu trước khi set state
@@ -80,7 +82,7 @@ export default function Booking() {
         setShowtime({
             id: data.showtimeId,
             movie: { title: data.movieTitle },
-            starts_at: new Date(data.startsAt), 
+            starts_at: new Date(data.startsAt),
             price: data.basePrice, // <<-- basePrice từ Backend
             theater: {
                 total_rows: data.totalRows || 10, // Giá trị mặc định nếu null
@@ -89,8 +91,10 @@ export default function Booking() {
         });
         // Lấy danh sách mã ghế đã đặt
         setBookedSeatCodes(data.bookedSeatCodes || []);
+        // Lưu thông tin tất cả ghế với type (VIP, STANDARD, DISABLED, COUPLE)
+        setAllSeats(data.allSeats || []);
         console.log("✅ Đã set showtime state thành công");
-        
+
     } catch (error) {
         console.error("❌ API Fetch Error:", error);
         console.error("Error details:", {
@@ -99,7 +103,7 @@ export default function Booking() {
             status: error.response?.status,
             statusText: error.response?.statusText
         });
-        
+
         // Xử lý lỗi 404/500 từ Backend. Server trả 404 nếu không tìm thấy.
         let errorMessage = "Failed to load booking details";
         if (error.response?.status === 404) {
@@ -109,11 +113,11 @@ export default function Booking() {
         } else if (error.message) {
             errorMessage = error.message;
         }
-        
-        toast({ 
-            title: "Lỗi", 
-            description: errorMessage, 
-            variant: "destructive" 
+
+        toast({
+            title: "Lỗi",
+            description: errorMessage,
+            variant: "destructive"
         });
         setShowtime(null); // Đặt showtime là null để hiển thị lỗi "not found"
     } finally {
@@ -130,29 +134,29 @@ export default function Booking() {
     setSubmitting(true);
     try {
         // Lấy token từ sessionStorage
-        const userId = sessionStorage.getItem('userId'); 
+        const userId = sessionStorage.getItem('userId');
         // Kiểm tra xem token có tồn tại không
-        if (!userId) { 
+        if (!userId) {
             toast({ title: "Authentication Error", description: "Vui lòng đăng nhập để đặt vé.", variant: "destructive" });
-            navigate("/login"); 
+            navigate("/login");
             return;
         }
-        
+
         const requestBody = {
             showtimeId: parseInt(showtimeId),
-            selectedSeats: selectedSeats, 
+            selectedSeats: selectedSeats,
             paymentMethod: paymentMethod,
-            userId: parseInt(userId) 
+            userId: parseInt(userId)
         };
 
-        const response = await api.post('/booking', requestBody); 
+        const response = await api.post('/booking', requestBody);
 
-        const ticketCode = response.data.ticketCode; 
+        const ticketCode = response.data.ticketCode;
 
-        toast({ 
-  title: "Booking successful!", 
-  description: `Mã vé của bạn: ${ticketCode}`, 
-  variant: "success" 
+        toast({
+  title: "Booking successful!",
+  description: `Mã vé của bạn: ${ticketCode}`,
+  variant: "success"
 });
 
 // ⚡ Cập nhật giao diện ngay lập tức
@@ -163,12 +167,12 @@ setSelectedSeats([]);
 
 // Gọi lại API để đồng bộ hóa dữ liệu chính xác từ backend (nếu cần)
 await fetchShowtimeDetails();
-        
-    } catch (error) { 
+
+    } catch (error) {
         // Xử lý lỗi 403 Forbidden (không xác thực) hoặc lỗi nghiệp vụ (ghế đã bị chiếm)
         const status = error.response?.status;
         let errorMessage = "Failed to create booking";
-        
+
         if (status === 403 || status === 401) {
              errorMessage = "Bạn cần đăng nhập để thực hiện giao dịch này.";
         } else if (error.response?.data?.message) {
@@ -178,9 +182,31 @@ await fetchShowtimeDetails();
         toast({ title: "Error", description: errorMessage, variant: "destructive" });
     } finally { setSubmitting(false); }
   };
-    
+
+  // ✅ Hàm tính giá theo loại ghế
+  const calculateSeatPrice = (seatId) => {
+    const basePrice = showtime?.price || 0;
+    const rowLabel = seatId.charAt(0);
+    const seatNumber = parseInt(seatId.substring(1));
+    const seatInfo = allSeats.find(
+      seat => seat.rowLabel === rowLabel && seat.seatNumber === seatNumber
+    );
+
+    if (!seatInfo) return basePrice;
+
+    switch (seatInfo.type) {
+      case 'VIP':
+        return basePrice * 1.25;
+      case 'COUPLE':
+        return basePrice * 2.0; // Ghế đôi gấp đôi giá
+      case 'STANDARD':
+      default:
+        return basePrice;
+    }
+  };
+
     // TÍNH TOÁN AN TOÀN TRƯỚC KHI RENDER
-  const totalAmount = selectedSeats.length * (showtime?.price || 0);
+  const totalAmount = selectedSeats.reduce((sum, seatId) => sum + calculateSeatPrice(seatId), 0);
 
   if (loading) {
     return (
@@ -211,11 +237,11 @@ await fetchShowtimeDetails();
       </Layout>
     );
   }
-  
+
 
 return (
   <Layout>
-    <div className="px-4 py-12 max-w-7xl mx-auto"> 
+    <div className="px-4 py-12 max-w-7xl mx-auto">
       <h1 className="text-3xl font-bold mb-8">ĐẶT VÉ</h1>
 
       <div className="grid lg:grid-cols-[1fr_400px] gap-8">
@@ -239,6 +265,7 @@ return (
               bookedSeats={bookedSeatCodes}
               selectedSeats={selectedSeats}
               onSeatsChange={setSelectedSeats}
+              allSeats={allSeats}
             />
           ) : (
             <Card className="border-border">
@@ -267,9 +294,33 @@ return (
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Giá vé</p>
+                <p className="text-sm text-muted-foreground mb-1">Giá vé cơ bản</p>
                 <p className="font-semibold">{formatVND(showtime?.price)}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  VIP: +25% | Couple: x2
+                </p>
               </div>
+
+              {selectedSeats.length > 0 && (
+                <div className="border-t border-border pt-4">
+                  <p className="text-sm text-muted-foreground mb-2">Chi tiết giá</p>
+                  <div className="space-y-1">
+                    {selectedSeats.map(seatId => {
+                      const seatInfo = allSeats.find(s =>
+                        s.rowLabel === seatId.charAt(0) &&
+                        s.seatNumber === parseInt(seatId.substring(1))
+                      );
+                      const price = calculateSeatPrice(seatId);
+                      return (
+                        <div key={seatId} className="flex justify-between text-sm">
+                          <span>{seatId} ({seatInfo?.type || 'STANDARD'})</span>
+                          <span>{formatVND(price)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="border-t border-border pt-4">
                 <p className="text-sm text-muted-foreground mb-1">Tổng thanh toán</p>
